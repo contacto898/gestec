@@ -1,14 +1,14 @@
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import StatsCard from "@/components/dashboard/StatsCard";
-import { Users, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Users, TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 
 function formatCurrency(n) {
-  return new Intl.NumberFormat("es", { style: "currency", currency: "USD" }).format(n || 0);
+  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
 function groupByMonth(items) {
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list() });
   const { data: incomes = [] } = useQuery({ queryKey: ["incomes"], queryFn: () => base44.entities.Income.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
+  const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list() });
 
   // Current month
   const now = new Date();
@@ -46,6 +47,8 @@ export default function Dashboard() {
   const totalAllExpense = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const balanceTotal = totalAllIncome - totalAllExpense;
 
+  const totalFixedExpenses = fixedExpenses.filter(f => f.status === "activo").reduce((s, f) => s + (f.amount || 0), 0);
+
   const incomeByMonth = groupByMonth(incomes);
   const expenseByMonth = groupByMonth(expenses);
   const allMonths = [...new Set([...Object.keys(incomeByMonth), ...Object.keys(expenseByMonth)])].sort();
@@ -64,11 +67,12 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} />
         <StatsCard title="Total Planilla" value={formatCurrency(totalPayroll)} icon={Wallet} trendLabel={`${activeWorkers.length} activos`} />
         <StatsCard title="Ingresos del Mes" value={formatCurrency(totalMonthIncome)} icon={TrendingUp} trend="up" trendLabel={`${monthIncomes.length} registros este mes`} />
         <StatsCard title="Gastos del Mes" value={formatCurrency(totalMonthExpense)} icon={TrendingDown} trend="down" trendLabel={`${monthExpenses.length} registros este mes`} />
+        <StatsCard title="Gastos Fijos Mensuales" value={formatCurrency(totalFixedExpenses)} icon={Receipt} trendLabel={`${fixedExpenses.filter(f=>f.status==='activo').length} activos`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -79,7 +83,7 @@ export default function Dashboard() {
               <BarChart data={chartData} barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `S/ ${v}`} />
                 <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))" }} formatter={(v) => formatCurrency(v)} />
                 <Bar dataKey="Ingresos" fill="hsl(167, 72%, 46%)" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="Gastos" fill="hsl(0, 84%, 60%)" radius={[6, 6, 0, 0]} />
@@ -131,6 +135,10 @@ export default function Dashboard() {
               <div className="flex justify-between items-center p-3 rounded-xl bg-muted">
                 <span className="text-sm font-medium">Planilla activa</span>
                 <span className="font-bold text-primary">{formatCurrency(totalPayroll)}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 rounded-xl bg-orange-50">
+                <span className="text-sm font-medium text-orange-700">Gastos fijos</span>
+                <span className="font-bold text-orange-600">{formatCurrency(totalFixedExpenses)}</span>
               </div>
             </div>
           </div>

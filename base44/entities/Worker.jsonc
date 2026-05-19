@@ -12,7 +12,7 @@
     },
     "salary": {
       "type": "number",
-      "description": "Salario del trabajador"
+      "description": "Salario mensual del trabajador"
     },
     "payment_type": {
       "type": "string",
@@ -28,6 +28,11 @@
       "format": "date",
       "description": "Fecha de pago"
     },
+    "hire_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de contrataci\u00f3n"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -36,6 +41,11 @@
       ],
       "default": "activo",
       "description": "Estado del trabajador"
+    },
+    "vacation_paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "\u00daltima fecha que se pagaron/tomaron vacaciones"
     }
   },
   "required": [

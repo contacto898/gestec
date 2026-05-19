@@ -13,7 +13,7 @@ const categoryLabels = {
 };
 
 function formatCurrency(n) {
-  return new Intl.NumberFormat("es", { style: "currency", currency: "USD" }).format(n || 0);
+  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
 export default function FinanceTable({ items, type, onEdit, onDelete }) {

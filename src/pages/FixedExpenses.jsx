@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 function formatCurrency(n) {
-  return new Intl.NumberFormat("es", { style: "currency", currency: "USD" }).format(n || 0);
+  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
 const freqLabels = { mensual: "Mensual", bimestral: "Bimestral", trimestral: "Trimestral", semestral: "Semestral", anual: "Anual", unico: "Único" };

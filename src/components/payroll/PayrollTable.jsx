@@ -3,27 +3,123 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Pencil, Trash2, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
-import { format } from "date-fns";
+import { Pencil, Trash2, DollarSign, ChevronDown, ChevronUp, Palmtree } from "lucide-react";
+import { format, differenceInMonths, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
 
 const paymentTypeLabels = { mensual: "Mensual", quincenal: "Quincenal", semanal: "Semanal" };
 
 function formatCurrency(n) {
-  return new Intl.NumberFormat("es", { style: "currency", currency: "USD" }).format(n || 0);
+  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
-// Calculate installment amount due based on frequency
+
+// Amount to pay per period based on payment_type
+function getSalaryByType(salary, paymentType) {
+  if (paymentType === "quincenal") return salary / 2;
+  if (paymentType === "semanal") return salary / 4.33;
+  return salary; // mensual
+}
+
 function getInstallmentAmount(deduction) {
   return deduction.total_amount / deduction.installments;
 }
 
+// Check if worker has completed 1+ year and hasn't received vacation for current year
+function getVacationStatus(worker) {
+  if (!worker.hire_date) return null;
+  const hire = new Date(worker.hire_date);
+  const now = new Date();
+  const years = differenceInYears(now, hire);
+  if (years < 1) return null;
+
+  // Check months since last vacation payment
+  if (worker.vacation_paid_date) {
+    const lastVacPaid = new Date(worker.vacation_paid_date);
+    const monthsSince = differenceInMonths(now, lastVacPaid);
+    if (monthsSince < 11) return null; // Not due yet
+  }
+  // Vacation = half a month salary
+  const vacationAmount = worker.salary / 2;
+  return { years, vacationAmount };
+}
+
+// ── Vacation Dialog ──────────────────────────────────────────────────────────
+function VacationDialog({ open, onClose, worker, onConfirm }) {
+  const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto"
+  const [daysOff, setDaysOff] = useState(7); // for mixto
+  const vacAmount = worker?.salary / 2 || 0;
+
+  const paidAmount = option === "vacaciones" ? 0
+    : option === "mixto" ? vacAmount * (1 - daysOff / 15)
+    : vacAmount;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Vacaciones — {worker?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm">
+            <p className="font-semibold text-amber-800">¡Año cumplido!</p>
+            <p className="text-amber-700 mt-0.5">Vacaciones = medio mes = {formatCurrency(vacAmount)}</p>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">¿Cómo tomará las vacaciones?</p>
+            <div className="space-y-2">
+              {[
+                { value: "pago", label: "Se paga el medio mes completo", desc: "No toma días libres" },
+                { value: "vacaciones", label: "Toma vacaciones completas", desc: "15 días libres, sin pago extra" },
+                { value: "mixto", label: "Vacaciones parciales + pago", desc: "Parte libre, parte pagada" },
+              ].map((opt) => (
+                <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${option === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}>
+                  <input type="radio" className="mt-0.5" value={opt.value} checked={option === opt.value} onChange={() => setOption(opt.value)} />
+                  <div>
+                    <p className="text-sm font-medium">{opt.label}</p>
+                    <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          {option === "mixto" && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Días libres (de 15)</label>
+              <input type="range" min={1} max={14} value={daysOff} onChange={(e) => setDaysOff(+e.target.value)} className="w-full" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{daysOff} días libres</span>
+                <span>Pago: {formatCurrency(vacAmount * (1 - daysOff / 15))}</span>
+              </div>
+            </div>
+          )}
+          {paidAmount > 0 && (
+            <div className="p-3 rounded-xl bg-emerald-50 flex justify-between items-center">
+              <span className="text-sm font-medium text-emerald-700">Monto a pagar</span>
+              <span className="font-bold text-emerald-600">{formatCurrency(paidAmount)}</span>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button onClick={() => { onConfirm(worker, option, paidAmount, daysOff); onClose(); }}
+              className="bg-amber-500 hover:bg-amber-600 gap-2">
+              <Palmtree className="w-4 h-4" /> Confirmar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Pay Confirm Dialog ───────────────────────────────────────────────────────
 function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
   const activeDeductions = deductions.filter(
     (d) => d.worker_id === worker?.id && d.status !== "completado" && d.paid_installments < d.installments
   );
+  const periodSalary = getSalaryByType(worker?.salary || 0, worker?.payment_type);
   const totalDeductions = activeDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
-  const netPay = (worker?.salary || 0) - totalDeductions;
+  const netPay = periodSalary - totalDeductions;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -34,16 +130,20 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
         <div className="space-y-4 mt-2">
           <div className="p-4 rounded-xl bg-muted/40 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Salario ({paymentTypeLabels[worker?.payment_type]})</span>
-              <span className="font-semibold">{formatCurrency(worker?.salary)}</span>
+              <span className="text-muted-foreground">Salario {paymentTypeLabels[worker?.payment_type]}</span>
+              <span className="font-semibold">{formatCurrency(periodSalary)}</span>
             </div>
+            {worker?.salary !== periodSalary && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Salario mensual</span>
+                <span>{formatCurrency(worker?.salary)}</span>
+              </div>
+            )}
             {activeDeductions.map((d) => (
               <div key={d.id} className="flex justify-between text-sm">
                 <span className="text-red-600">
                   — {d.type === "descuento" ? "Descuento" : "Adelanto"}: {d.concept}
-                  <span className="text-xs text-muted-foreground ml-1">
-                    (cuota {d.paid_installments + 1}/{d.installments})
-                  </span>
+                  <span className="text-xs text-muted-foreground ml-1">(cuota {(d.paid_installments || 0) + 1}/{d.installments})</span>
                 </span>
                 <span className="font-semibold text-red-600">-{formatCurrency(getInstallmentAmount(d))}</span>
               </div>
@@ -53,12 +153,10 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
               <span className={netPay >= 0 ? "text-emerald-600" : "text-red-500"}>{formatCurrency(netPay)}</span>
             </div>
           </div>
-          {activeDeductions.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center">Sin descuentos ni adelantos activos</p>
-          )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={() => { onPay(worker, activeDeductions, netPay); onClose(); }} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+            <Button onClick={() => { onPay(worker, activeDeductions, netPay); onClose(); }}
+              className="bg-emerald-600 hover:bg-emerald-700 gap-2">
               <DollarSign className="w-4 h-4" /> Registrar Pago
             </Button>
           </div>
@@ -68,12 +166,13 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
   );
 }
 
-export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay }) {
+// ── Main Table ───────────────────────────────────────────────────────────────
+export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, paidToday }) {
   const [payWorker, setPayWorker] = useState(null);
+  const [vacWorker, setVacWorker] = useState(null);
   const [expanded, setExpanded] = useState({});
 
   const totalPayroll = workers.reduce((sum, w) => sum + (w.salary || 0), 0);
-
   const toggleExpand = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
@@ -85,11 +184,12 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Nombre</TableHead>
                 <TableHead className="font-semibold">Cargo</TableHead>
-                <TableHead className="font-semibold text-right">Salario</TableHead>
+                <TableHead className="font-semibold text-right">Salario Mensual</TableHead>
+                <TableHead className="font-semibold text-right">A Pagar ({" "}período)</TableHead>
                 <TableHead className="font-semibold text-right">Descuentos</TableHead>
                 <TableHead className="font-semibold text-right">Neto</TableHead>
                 <TableHead className="font-semibold">Tipo</TableHead>
-                <TableHead className="font-semibold">Fecha Pago</TableHead>
+                <TableHead className="font-semibold">Contrato</TableHead>
                 <TableHead className="font-semibold">Estado</TableHead>
                 <TableHead className="font-semibold text-right">Acciones</TableHead>
               </TableRow>
@@ -100,7 +200,10 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                   (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
                 );
                 const totalDed = workerDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
-                const neto = w.salary - totalDed;
+                const periodSalary = getSalaryByType(w.salary, w.payment_type);
+                const neto = periodSalary - totalDed;
+                const vacStatus = getVacationStatus(w);
+                const alreadyPaid = paidToday?.includes(w.id);
 
                 return [
                   <TableRow key={w.id} className="hover:bg-muted/30 transition-colors">
@@ -111,11 +214,17 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                             {expanded[w.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </button>
                         )}
-                        {w.name}
+                        <span>{w.name}</span>
+                        {vacStatus && (
+                          <span title={`Vacaciones pendientes (${vacStatus.years} año${vacStatus.years > 1 ? "s" : ""})`}>
+                            <Palmtree className="w-3.5 h-3.5 text-amber-500 ml-1" />
+                          </span>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{w.position || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{w.position || "—"}</TableCell>
                     <TableCell className="text-right font-semibold">{formatCurrency(w.salary)}</TableCell>
+                    <TableCell className="text-right font-semibold text-primary">{formatCurrency(periodSalary)}</TableCell>
                     <TableCell className="text-right">
                       {totalDed > 0
                         ? <span className="text-red-500 font-semibold">-{formatCurrency(totalDed)}</span>
@@ -125,8 +234,8 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                     <TableCell>
                       <Badge variant="secondary" className="font-normal">{paymentTypeLabels[w.payment_type] || w.payment_type}</Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {w.payment_date ? format(new Date(w.payment_date), "dd MMM yyyy", { locale: es }) : "—"}
+                    <TableCell className="text-muted-foreground text-sm">
+                      {w.hire_date ? format(new Date(w.hire_date), "dd MMM yyyy", { locale: es }) : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge className={w.status === "activo" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-red-100 text-red-700 hover:bg-red-100"}>
@@ -134,13 +243,19 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 flex-wrap">
                         <Button size="sm" onClick={() => setPayWorker(w)}
-                          className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 h-7 px-2 text-xs">
-                          <DollarSign className="w-3.5 h-3.5" /> Pagar
+                          className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-600" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+                          <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => onDelete(w.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                        {vacStatus && (
+                          <Button size="sm" onClick={() => setVacWorker(w)}
+                            className="gap-1 h-7 px-2 text-xs bg-amber-500 hover:bg-amber-600">
+                            <Palmtree className="w-3.5 h-3.5" /> Vac.
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(w.id)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>,
@@ -150,19 +265,19 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                         {d.type === "descuento" ? "↳ Descuento" : "↳ Adelanto"}: {d.concept}
                       </TableCell>
                       <TableCell colSpan={2} className="text-right text-xs text-red-500">
-                        Cuota {d.paid_installments + 1}/{d.installments} · {paymentTypeLabels[d.frequency]}
+                        Cuota {(d.paid_installments || 0) + 1}/{d.installments} · {paymentTypeLabels[d.frequency]}
                       </TableCell>
                       <TableCell className="text-right text-xs font-semibold text-red-500">
                         -{formatCurrency(getInstallmentAmount(d))}
                       </TableCell>
-                      <TableCell colSpan={4} />
+                      <TableCell colSpan={5} />
                     </TableRow>
                   ))
                 ];
               })}
               {workers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">No hay trabajadores registrados</TableCell>
+                  <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">No hay trabajadores registrados</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -170,19 +285,14 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
         </div>
         {workers.length > 0 && (
           <div className="border-t px-6 py-4 flex justify-between items-center bg-primary/5">
-            <span className="font-semibold text-sm">Total Planilla Bruta</span>
+            <span className="font-semibold text-sm">Total Planilla Mensual</span>
             <span className="text-xl font-bold text-primary">{formatCurrency(totalPayroll)}</span>
           </div>
         )}
       </div>
 
-      <PayConfirmDialog
-        open={!!payWorker}
-        onClose={() => setPayWorker(null)}
-        worker={payWorker}
-        deductions={deductions}
-        onPay={onPay}
-      />
+      <PayConfirmDialog open={!!payWorker} onClose={() => setPayWorker(null)} worker={payWorker} deductions={deductions} onPay={onPay} />
+      <VacationDialog open={!!vacWorker} onClose={() => setVacWorker(null)} worker={vacWorker} onConfirm={onVacation} />
     </>
   );
 }
