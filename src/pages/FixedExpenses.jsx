@@ -277,7 +277,7 @@ export default function FixedExpenses() {
       description: `Gasto fijo — ${item.description} (${item.company})`,
       amount: paidAmount,
       date: date,
-      category: item.category || "Gastos Fijos",
+      category: "otros",
     });
     addPaidToday("gastos_fijos", item.id);
     setPaidToday(getPaidToday("gastos_fijos"));
