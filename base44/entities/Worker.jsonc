@@ -46,6 +46,11 @@
       "type": "string",
       "format": "date",
       "description": "\u00daltima fecha que se pagaron/tomaron vacaciones"
+    },
+    "last_payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del \u00faltimo pago de planilla registrado"
     }
   },
   "required": [

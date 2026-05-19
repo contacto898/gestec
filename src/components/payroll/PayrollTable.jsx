@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Pencil, Trash2, DollarSign, ChevronDown, ChevronUp, Palmtree } from "lucide-react";
 import { format, differenceInMonths, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
+import { isAlreadyPaidThisPeriod, getNextPaymentDate } from "@/lib/paidToday";
 
 const paymentTypeLabels = { mensual: "Mensual", quincenal: "Quincenal", semanal: "Semanal" };
 
@@ -223,7 +224,7 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
 }
 
 // ── Worker Card (mobile/tablet) ───────────────────────────────────────────────
-function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, paidToday, vacPaidToday }) {
+function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, vacPaidToday }) {
   const [expanded, setExpanded] = useState(false);
   const workerDeductions = deductions.filter(
     (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
@@ -232,7 +233,8 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, p
   const periodSalary = getSalaryByType(w.salary, w.payment_type);
   const neto = periodSalary - totalDed;
   const vacStatus = getVacationStatus(w);
-  const alreadyPaid = paidToday?.includes(w.id);
+  const alreadyPaid = isAlreadyPaidThisPeriod(w);
+  const nextPayDate = alreadyPaid ? getNextPaymentDate(w) : null;
   const alreadyVacPaid = vacPaidToday?.includes(w.id);
 
   return (
@@ -275,9 +277,13 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, p
         </div>
         <div className="flex flex-col gap-1 shrink-0">
           <Button size="sm" onClick={alreadyPaid ? undefined : () => onPayClick(w)} disabled={alreadyPaid}
-            className={`gap-1 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+            className={`gap-1 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}
+            title={alreadyPaid && nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}>
             <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
           </Button>
+          {alreadyPaid && nextPayDate && (
+            <p className="text-[10px] text-muted-foreground text-center">Próx: {format(nextPayDate, "dd/MM", { locale: es })}</p>
+          )}
           {vacStatus && (
             <Button size="sm" onClick={alreadyVacPaid ? undefined : () => onVacClick(w)} disabled={alreadyVacPaid}
               className={`gap-1 h-7 px-2 text-xs ${alreadyVacPaid ? "bg-amber-700 hover:bg-amber-700 cursor-not-allowed opacity-80" : "bg-amber-500 hover:bg-amber-600"}`}>
@@ -295,7 +301,7 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, p
 }
 
 // ── Main Table ───────────────────────────────────────────────────────────────
-export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, paidToday, vacPaidToday }) {
+export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, vacPaidToday }) {
   const [payWorker, setPayWorker] = useState(null);
   const [vacWorker, setVacWorker] = useState(null);
   const [expanded, setExpanded] = useState({});
@@ -315,7 +321,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
               <WorkerCard key={w.id} w={w} deductions={deductions}
                 onEdit={onEdit} onDelete={onDelete}
                 onPayClick={setPayWorker} onVacClick={setVacWorker}
-                paidToday={paidToday} vacPaidToday={vacPaidToday} />
+                vacPaidToday={vacPaidToday} />
             ))
           )}
         </div>
@@ -346,7 +352,8 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                 const periodSalary = getSalaryByType(w.salary, w.payment_type);
                 const neto = periodSalary - totalDed;
                 const vacStatus = getVacationStatus(w);
-                const alreadyPaid = paidToday?.includes(w.id);
+                const alreadyPaid = isAlreadyPaidThisPeriod(w);
+                const nextPayDate = alreadyPaid ? getNextPaymentDate(w) : null;
                 const alreadyVacPaid = vacPaidToday?.includes(w.id);
 
                 return [
@@ -388,12 +395,18 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1 flex-wrap">
-                        <Button size="sm"
-                          onClick={alreadyPaid ? undefined : () => setPayWorker(w)}
-                          disabled={alreadyPaid}
-                          className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
-                          <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
-                        </Button>
+                        <div className="flex flex-col items-end gap-0.5">
+                          <Button size="sm"
+                            onClick={alreadyPaid ? undefined : () => setPayWorker(w)}
+                            disabled={alreadyPaid}
+                            title={alreadyPaid && nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}
+                            className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+                            <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
+                          </Button>
+                          {alreadyPaid && nextPayDate && (
+                            <span className="text-[10px] text-muted-foreground">Próx: {format(nextPayDate, "dd/MM/yyyy", { locale: es })}</span>
+                          )}
+                        </div>
                         {vacStatus && (
                           <Button size="sm"
                             onClick={alreadyVacPaid ? undefined : () => setVacWorker(w)}

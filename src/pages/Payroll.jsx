@@ -19,7 +19,7 @@ function getTodayLocal() {
 export default function Payroll() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [paidToday, setPaidToday] = useState(() => getPaidToday("planilla"));
+
   const [vacPaidToday, setVacPaidToday] = useState(() => getPaidToday("vacaciones"));
   const qc = useQueryClient();
 
@@ -27,7 +27,7 @@ export default function Payroll() {
   const { data: deductions = [] } = useQuery({ queryKey: ["deductions"], queryFn: () => base44.entities.Deduction.list() });
 
   const createWorker = useMutation({ mutationFn: (d) => base44.entities.Worker.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
-  const updateWorker = useMutation({ mutationFn: ({ id, data }) => base44.entities.Worker.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
+  const updateWorker = useMutation({ mutationFn: ({ id, data }) => base44.entities.Worker.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }), mutationKey: ["updateWorker"] });
   const deleteWorker = useMutation({ mutationFn: (id) => base44.entities.Worker.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
   const createExpense = useMutation({
     mutationFn: (d) => base44.entities.Expense.create(d),
@@ -51,13 +51,13 @@ export default function Payroll() {
       date: today,
       category: "planilla",
     });
+    // Save last payment date on the worker record
+    await updateWorker.mutateAsync({ id: worker.id, data: { ...worker, last_payment_date: today } });
     for (const d of activeDeductions) {
       const newPaid = (d.paid_installments || 0) + 1;
       const newStatus = newPaid >= d.installments ? "completado" : "en_proceso";
       updateDeduction.mutate({ id: d.id, data: { ...d, paid_installments: newPaid, status: newStatus } });
     }
-    addPaidToday("planilla", worker.id);
-    setPaidToday(getPaidToday("planilla"));
   };
 
   const handleVacation = async (worker, option, paidAmount, days, vacStartDate, daysAccumulated) => {
@@ -83,7 +83,7 @@ export default function Payroll() {
     // Use separate prefix so the salary "Pagar" button is NOT affected
     addPaidToday("vacaciones", worker.id);
     setVacPaidToday(getPaidToday("vacaciones"));
-    setPaidToday(getPaidToday("planilla"));
+
   };
 
   return (
@@ -105,7 +105,6 @@ export default function Payroll() {
         onDelete={(id) => deleteWorker.mutate(id)}
         onPay={handlePay}
         onVacation={handleVacation}
-        paidToday={paidToday}
         vacPaidToday={vacPaidToday}
       />
 
