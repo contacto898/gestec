@@ -93,26 +93,30 @@ function RoleForm({ open, onClose, onSubmit, editing }) {
 
 // ── Create User Dialog ────────────────────────────────────────────────────────
 function CreateUserDialog({ open, onClose }) {
-  const [form, setForm] = useState({ dni: "", email: "", appRole: "user" });
+  const [form, setForm] = useState({ dni: "", email: "", password: "", appRole: "user" });
+  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    if (open) { setForm({ dni: "", email: "", appRole: "user" }); setMsg(null); }
+    if (open) { setForm({ dni: "", email: "", password: "", appRole: "user" }); setMsg(null); setShowPass(false); }
   }, [open]);
 
   const handleCreate = async () => {
-    if (!form.dni.trim() || !form.email.trim()) return;
+    if (!form.dni.trim() || !form.email.trim() || !form.password.trim()) return;
     if (!/^\d{8}$/.test(form.dni.trim())) {
       setMsg({ type: "error", text: "El DNI debe tener exactamente 8 dígitos" });
+      return;
+    }
+    if (form.password.length < 6) {
+      setMsg({ type: "error", text: "La contraseña debe tener al menos 6 caracteres" });
       return;
     }
     setLoading(true);
     setMsg(null);
     try {
-      await base44.users.inviteUser(form.email.trim(), form.appRole);
-      // Update the user's full_name to store DNI as identifier after invite
-      setMsg({ type: "success", text: `Invitación enviada a ${form.email}. El DNI ${form.dni} será su identificador en el sistema.` });
+      const res = await base44.auth.register({ email: form.email.trim(), password: form.password });
+      setMsg({ type: "success", text: `Usuario creado. Correo: ${form.email} | Contraseña inicial: ${form.password}. El usuario puede ingresar de inmediato.` });
     } catch (e) {
       setMsg({ type: "error", text: e.message || "Error al crear usuario" });
     } finally {
@@ -130,19 +134,29 @@ function CreateUserDialog({ open, onClose }) {
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <p className="text-sm text-muted-foreground">
-            El usuario recibirá una invitación en su correo. Su DNI será su identificador en el sistema.
+            Crea la cuenta directamente con una contraseña inicial. El usuario podrá ingresar de inmediato.
           </p>
           <div className="space-y-2">
-            <Label>DNI (identificador de acceso)</Label>
+            <Label>DNI (identificador en el sistema)</Label>
             <Input type="text" placeholder="Ej: 12345678" maxLength={8} value={form.dni}
               onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, "") })} />
-            <p className="text-xs text-muted-foreground">8 dígitos — se mostrará como usuario en el sistema</p>
           </div>
           <div className="space-y-2">
-            <Label>Correo electrónico real</Label>
+            <Label>Correo electrónico</Label>
             <Input type="email" placeholder="correo@ejemplo.com" value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <p className="text-xs text-muted-foreground">Recibirá aquí la invitación para activar su cuenta</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Contraseña inicial</Label>
+            <div className="relative">
+              <Input type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <button onClick={() => setShowPass(!showPass)} type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">Compártela con el usuario para que pueda ingresar</p>
           </div>
           <div className="space-y-2">
             <Label>Nivel de acceso</Label>
@@ -161,8 +175,8 @@ function CreateUserDialog({ open, onClose }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={handleCreate} disabled={loading || !form.dni.trim() || !form.email.trim()} className="gap-2">
-              <UserPlus className="w-4 h-4" /> {loading ? "Enviando..." : "Crear Usuario"}
+            <Button onClick={handleCreate} disabled={loading || !form.dni.trim() || !form.email.trim() || !form.password.trim()} className="gap-2">
+              <UserPlus className="w-4 h-4" /> {loading ? "Creando..." : "Crear Usuario"}
             </Button>
           </div>
         </div>
