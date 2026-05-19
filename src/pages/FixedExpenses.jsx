@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPaidToday, addPaidToday } from "@/lib/paidToday";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,10 +177,11 @@ function FixedExpenseForm({ open, onClose, onSubmit, editing, categories }) {
 }
 
 // ── Item Row ─────────────────────────────────────────────────────────────────
-function FixedExpenseRow({ item, payments, onEdit, onDelete, onPay }) {
+function FixedExpenseRow({ item, payments, onEdit, onDelete, onPay, paidToday = [] }) {
   const itemPayments = payments.filter((p) => p.fixed_expense_id === item.id);
   const totalPaid = itemPayments.reduce((s, p) => s + (p.paid_amount || 0), 0);
   const lastPayment = itemPayments.sort((a, b) => b.payment_date?.localeCompare(a.payment_date))[0];
+  const alreadyPaid = paidToday.includes(item.id);
 
   return (
     <div className="p-5 flex items-start justify-between gap-4 hover:bg-muted/20 transition-colors">
@@ -209,13 +211,19 @@ function FixedExpenseRow({ item, payments, onEdit, onDelete, onPay }) {
           {totalPaid > 0 && (
             <p className="text-xs text-muted-foreground">Total pagado: {formatCurrency(totalPaid)}</p>
           )}
+          {item.created_by && (
+            <p className="text-[10px] text-muted-foreground/70">Registrado por: {item.created_by.split("@")[0]}</p>
+          )}
         </div>
       </div>
       <div className="text-right shrink-0">
         <p className="text-lg font-bold text-primary">{formatCurrency(item.amount)}</p>
         <div className="flex gap-1 mt-1 justify-end flex-wrap">
-          <Button size="sm" onClick={() => onPay(item)} className="h-7 px-2 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700">
-            <CheckCircle className="w-3.5 h-3.5" /> Pagar
+          <Button size="sm"
+            onClick={alreadyPaid ? undefined : () => onPay(item)}
+            disabled={alreadyPaid}
+            className={`h-7 px-2 text-xs gap-1 ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+            <CheckCircle className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Pencil className="w-4 h-4" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(item.id)}><Trash2 className="w-4 h-4" /></Button>
@@ -232,6 +240,7 @@ export default function FixedExpenses() {
   const [catManagerOpen, setCatManagerOpen] = useState(false);
   const [payItem, setPayItem] = useState(null);
   const [view, setView] = useState("list");
+  const [paidToday, setPaidToday] = useState(() => getPaidToday("gastos_fijos"));
   const qc = useQueryClient();
 
   const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list("-created_date") });
@@ -256,7 +265,6 @@ export default function FixedExpenses() {
   };
 
   const handleConfirmPay = async (item, paidAmount, date) => {
-    // Save payment record
     createPayment.mutate({
       fixed_expense_id: item.id,
       fixed_expense_description: item.description,
@@ -264,13 +272,14 @@ export default function FixedExpenses() {
       paid_amount: paidAmount,
       payment_date: date,
     });
-    // Register in Ingresos y Gastos
     createExpense.mutate({
       description: `Gasto fijo — ${item.description} (${item.company})`,
       amount: paidAmount,
       date: date,
       category: item.category || "Gastos Fijos",
     });
+    addPaidToday("gastos_fijos", item.id);
+    setPaidToday(getPaidToday("gastos_fijos"));
   };
 
   const activeItems = fixedExpenses.filter((f) => f.status === "activo");
@@ -335,7 +344,8 @@ export default function FixedExpenses() {
                 <FixedExpenseRow key={item.id} item={item} payments={payments}
                   onEdit={(i) => { setEditing(i); setFormOpen(true); }}
                   onDelete={(id) => deleteMut.mutate(id)}
-                  onPay={(i) => setPayItem(i)} />
+                  onPay={(i) => setPayItem(i)}
+                  paidToday={paidToday} />
               ))}
               <div className="px-5 py-4 flex justify-between items-center bg-primary/5">
                 <span className="font-semibold">Total General</span>
@@ -368,7 +378,8 @@ export default function FixedExpenses() {
                       <FixedExpenseRow key={item.id} item={item} payments={payments}
                         onEdit={(i) => { setEditing(i); setFormOpen(true); }}
                         onDelete={(id) => deleteMut.mutate(id)}
-                        onPay={(i) => setPayItem(i)} />
+                        onPay={(i) => setPayItem(i)}
+                        paidToday={paidToday} />
                     ))}
                   </div>
                 </Card>

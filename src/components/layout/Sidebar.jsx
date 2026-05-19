@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, ArrowUpDown, Tag, Minus, Receipt, X } from "lucide-react";
+import { LayoutDashboard, Users, ArrowUpDown, Tag, Minus, Receipt, X, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { path: "/categorias", label: "Categorías", icon: Tag },
   { path: "/descuentos", label: "Descuentos y Adelantos", icon: Minus },
   { path: "/gastos-fijos", label: "Gastos Fijos", icon: Receipt },
+  { path: "/usuarios", label: "Usuarios", icon: ShieldCheck },
 ];
 
 export default function Sidebar({ open, onClose }) {

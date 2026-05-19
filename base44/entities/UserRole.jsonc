@@ -1,0 +1,29 @@
+{
+  "name": "UserRole",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del rol"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del rol"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de permisos: dashboard, planilla, finanzas, categorias, descuentos, gastos_fijos, usuarios"
+    },
+    "color": {
+      "type": "string",
+      "description": "Color en hex"
+    }
+  },
+  "required": [
+    "name",
+    "permissions"
+  ]
+}

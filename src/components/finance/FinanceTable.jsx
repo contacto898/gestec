@@ -30,6 +30,7 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
               <TableHead className="font-semibold text-right">Monto</TableHead>
               <TableHead className="font-semibold">Fecha</TableHead>
               <TableHead className="font-semibold">Categoría</TableHead>
+              <TableHead className="font-semibold hidden md:table-cell">Registrado por</TableHead>
               <TableHead className="font-semibold text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -48,6 +49,9 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
                     {categoryLabels[item.category] || item.category}
                   </Badge>
                 </TableCell>
+                <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                  {item.created_by ? item.created_by.split("@")[0] : "—"}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
@@ -62,7 +66,7 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
             ))}
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                   No hay {isIncome ? "ingresos" : "gastos"} registrados
                 </TableCell>
               </TableRow>

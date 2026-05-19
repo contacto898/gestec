@@ -244,8 +244,10 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1 flex-wrap">
-                        <Button size="sm" onClick={() => setPayWorker(w)}
-                          className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-600" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+                        <Button size="sm"
+                          onClick={alreadyPaid ? undefined : () => setPayWorker(w)}
+                          disabled={alreadyPaid}
+                          className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
                           <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
                         </Button>
                         {vacStatus && (

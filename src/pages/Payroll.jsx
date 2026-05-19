@@ -6,11 +6,12 @@ import { Plus } from "lucide-react";
 import { format } from "date-fns";
 import PayrollForm from "@/components/payroll/PayrollForm";
 import PayrollTable from "@/components/payroll/PayrollTable";
+import { getPaidToday, addPaidToday } from "@/lib/paidToday";
 
 export default function Payroll() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [paidToday, setPaidToday] = useState([]); // track paid this session
+  const [paidToday, setPaidToday] = useState(() => getPaidToday("planilla"));
   const qc = useQueryClient();
 
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list("-created_date") });
@@ -40,7 +41,8 @@ export default function Payroll() {
       const newStatus = newPaid >= d.installments ? "completado" : "en_proceso";
       updateDeduction.mutate({ id: d.id, data: { ...d, paid_installments: newPaid, status: newStatus } });
     }
-    setPaidToday((prev) => [...prev, worker.id]);
+    addPaidToday("planilla", worker.id);
+    setPaidToday(getPaidToday("planilla"));
   };
 
   const handleVacation = async (worker, option, paidAmount, daysOff) => {
@@ -55,7 +57,8 @@ export default function Payroll() {
     }
     // Mark vacation date on worker
     updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: today } });
-    setPaidToday((prev) => [...prev, worker.id]);
+    addPaidToday("planilla", worker.id);
+    setPaidToday(getPaidToday("planilla"));
   };
 
   return (

@@ -59,7 +59,7 @@ export default function Dashboard() {
   }));
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 w-full max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
@@ -67,78 +67,79 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Stats row: 2 cols mobile, 3 tablet, 5 desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} />
         <StatsCard title="Total Planilla" value={formatCurrency(totalPayroll)} icon={Wallet} trendLabel={`${activeWorkers.length} activos`} />
-        <StatsCard title="Ingresos del Mes" value={formatCurrency(totalMonthIncome)} icon={TrendingUp} trend="up" trendLabel={`${monthIncomes.length} registros este mes`} />
-        <StatsCard title="Gastos del Mes" value={formatCurrency(totalMonthExpense)} icon={TrendingDown} trend="down" trendLabel={`${monthExpenses.length} registros este mes`} />
-        <StatsCard title="Gastos Fijos Mensuales" value={formatCurrency(totalFixedExpenses)} icon={Receipt} trendLabel={`${fixedExpenses.filter(f=>f.status==='activo').length} activos`} />
+        <StatsCard title="Gastos Fijos" value={formatCurrency(totalFixedExpenses)} icon={Receipt} trendLabel={`${fixedExpenses.filter(f=>f.status==='activo').length} activos`} />
+        <StatsCard title="Ingresos del Mes" value={formatCurrency(totalMonthIncome)} icon={TrendingUp} trend="up" trendLabel={`${monthIncomes.length} registros`} />
+        <StatsCard title="Gastos del Mes" value={formatCurrency(totalMonthExpense)} icon={TrendingDown} trend="down" trendLabel={`${monthExpenses.length} registros`} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 p-6">
+      {/* Chart + Summary */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <Card className="xl:col-span-2 p-4 lg:p-6 min-w-0 overflow-hidden">
           <h3 className="font-semibold mb-4">Ingresos vs Gastos por Mes</h3>
           {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `S/ ${v}`} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))" }} formatter={(v) => formatCurrency(v)} />
-                <Bar dataKey="Ingresos" fill="hsl(167, 72%, 46%)" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="Gastos" fill="hsl(0, 84%, 60%)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="w-full overflow-hidden">
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={chartData} barGap={4} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `S/${v}`} width={60} />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))" }} formatter={(v) => formatCurrency(v)} />
+                  <Bar dataKey="Ingresos" fill="hsl(167, 72%, 46%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Gastos" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">No hay datos para graficar</div>
+            <div className="h-[260px] flex items-center justify-center text-muted-foreground text-sm">No hay datos para graficar</div>
           )}
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-4 lg:p-6 min-w-0 overflow-hidden">
           <h3 className="font-semibold mb-4">Resumen Financiero</h3>
-          <div className="space-y-4">
-            {/* Balance Mes */}
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-              <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Balance Mes</p>
-              <p className={`text-3xl font-bold ${balanceMes >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+          <div className="space-y-3">
+            <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Balance Mes</p>
+              <p className={`text-2xl font-bold mt-0.5 ${balanceMes >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {formatCurrency(balanceMes)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1 capitalize">{format(now, "MMMM yyyy", { locale: es })}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{format(now, "MMMM yyyy", { locale: es })}</p>
             </div>
-            {/* Balance Total */}
-            <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
-              <p className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Balance Total</p>
-              <p className={`text-3xl font-bold ${balanceTotal >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Balance Total</p>
+              <p className={`text-2xl font-bold mt-0.5 ${balanceTotal >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {formatCurrency(balanceTotal)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Acumulado histórico</p>
-              <div className="mt-3 pt-3 border-t border-primary/20 grid grid-cols-2 gap-2">
+              <div className="mt-2 pt-2 border-t border-primary/20 grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Ingresos</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Ingresos</p>
                   <p className="font-bold text-emerald-600 text-sm">{formatCurrency(totalAllIncome)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Gastos</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Gastos</p>
                   <p className="font-bold text-red-500 text-sm">{formatCurrency(totalAllExpense)}</p>
                 </div>
               </div>
             </div>
-            <div className="space-y-2 pt-1">
-              <div className="flex justify-between items-center p-3 rounded-xl bg-emerald-50">
-                <span className="text-sm font-medium text-emerald-700">Ingresos del mes</span>
-                <span className="font-bold text-emerald-600">{formatCurrency(totalMonthIncome)}</span>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center p-2.5 rounded-xl bg-emerald-50">
+                <span className="text-xs font-medium text-emerald-700">Ingresos del mes</span>
+                <span className="font-bold text-emerald-600 text-sm">{formatCurrency(totalMonthIncome)}</span>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-xl bg-red-50">
-                <span className="text-sm font-medium text-red-700">Gastos del mes</span>
-                <span className="font-bold text-red-500">{formatCurrency(totalMonthExpense)}</span>
+              <div className="flex justify-between items-center p-2.5 rounded-xl bg-red-50">
+                <span className="text-xs font-medium text-red-700">Gastos del mes</span>
+                <span className="font-bold text-red-500 text-sm">{formatCurrency(totalMonthExpense)}</span>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-xl bg-muted">
-                <span className="text-sm font-medium">Planilla activa</span>
-                <span className="font-bold text-primary">{formatCurrency(totalPayroll)}</span>
+              <div className="flex justify-between items-center p-2.5 rounded-xl bg-muted">
+                <span className="text-xs font-medium">Planilla activa</span>
+                <span className="font-bold text-primary text-sm">{formatCurrency(totalPayroll)}</span>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-xl bg-orange-50">
-                <span className="text-sm font-medium text-orange-700">Gastos fijos</span>
-                <span className="font-bold text-orange-600">{formatCurrency(totalFixedExpenses)}</span>
+              <div className="flex justify-between items-center p-2.5 rounded-xl bg-orange-50">
+                <span className="text-xs font-medium text-orange-700">Gastos fijos</span>
+                <span className="font-bold text-orange-600 text-sm">{formatCurrency(totalFixedExpenses)}</span>
               </div>
             </div>
           </div>

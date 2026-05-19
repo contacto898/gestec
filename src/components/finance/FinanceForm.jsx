@@ -12,7 +12,8 @@ const FALLBACK_INCOME = [{ name: "Ventas" }, { name: "Servicios" }, { name: "Inv
 const FALLBACK_EXPENSE = [{ name: "Planilla" }, { name: "Alquiler" }, { name: "Servicios" }, { name: "Materiales" }, { name: "Transporte" }, { name: "Impuestos" }, { name: "Otros" }];
 
 export default function FinanceForm({ open, onClose, onSubmit, type, editing }) {
-  const [form, setForm] = useState(editing || { description: "", amount: "", date: "", category: "" });
+  const today = new Date().toISOString().split("T")[0];
+  const [form, setForm] = useState(editing || { description: "", amount: "", date: today, category: "" });
 
   const { data: allCategories = [] } = useQuery({
     queryKey: ["categories"],

@@ -161,6 +161,9 @@ function DeductionCard({ item, onEdit, onDelete }) {
             <div className="text-xs text-muted-foreground">
               {formatCurrency(installmentAmount)} / cuota · {item.paid_installments}/{item.installments} cuotas pagadas
             </div>
+            {item.created_by && (
+              <p className="text-[10px] text-muted-foreground/70">Registrado por: {item.created_by.split("@")[0]}</p>
+            )}
             <div className="w-48 h-1.5 bg-muted rounded-full mt-1">
               <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(progress * 100, 100)}%` }} />
             </div>
