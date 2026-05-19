@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPaidToday, addPaidToday } from "@/lib/paidToday";
@@ -72,6 +72,13 @@ function getTodayLocal() {
 function PayDialog({ open, onClose, item, onConfirmPay }) {
   const [paidAmount, setPaidAmount] = useState(item?.amount || "");
   const [date, setDate] = useState(getTodayLocal());
+
+  useEffect(() => {
+    if (open) {
+      setPaidAmount(item?.amount || "");
+      setDate(getTodayLocal());
+    }
+  }, [open, item]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
