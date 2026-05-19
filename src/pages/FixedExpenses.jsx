@@ -123,8 +123,13 @@ function PayDialog({ open, onClose, item, onConfirmPay }) {
 
 // ── Fixed Expense Form ───────────────────────────────────────────────────────
 function FixedExpenseForm({ open, onClose, onSubmit, editing, categories }) {
-  const init = editing || { description: "", company: "", amount: "", due_date: "", category: "", frequency: "mensual", status: "activo" };
-  const [form, setForm] = useState(init);
+  const [form, setForm] = useState({ description: "", company: "", amount: "", due_date: "", category: "", frequency: "mensual", status: "activo" });
+
+  useEffect(() => {
+    if (open) {
+      setForm(editing || { description: "", company: "", amount: "", due_date: "", category: "", frequency: "mensual", status: "activo" });
+    }
+  }, [open, editing]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

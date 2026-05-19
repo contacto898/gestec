@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,19 @@ const statusColors = {
 const statusLabels = { pendiente: "Pendiente", en_proceso: "En proceso", completado: "Completado" };
 
 function DeductionForm({ open, onClose, onSubmit, editing, workers, type }) {
-  const init = editing || {
+  const [form, setForm] = useState({
     type, worker_name: "", worker_id: "", concept: "", total_amount: "",
     installments: "1", frequency: "mensual", start_date: "", status: "pendiente", paid_installments: 0
-  };
-  const [form, setForm] = useState(init);
+  });
+
+  useEffect(() => {
+    if (open) {
+      setForm(editing || {
+        type, worker_name: "", worker_id: "", concept: "", total_amount: "",
+        installments: "1", frequency: "mensual", start_date: "", status: "pendiente", paid_installments: 0
+      });
+    }
+  }, [open, editing, type]);
 
   const handleWorker = (id) => {
     const w = workers.find((w) => w.id === id);
