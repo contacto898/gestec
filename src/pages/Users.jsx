@@ -93,30 +93,23 @@ function RoleForm({ open, onClose, onSubmit, editing }) {
 
 // ── Create User Dialog ────────────────────────────────────────────────────────
 function CreateUserDialog({ open, onClose }) {
-  const [form, setForm] = useState({ dni: "", email: "", password: "", appRole: "user" });
-  const [showPass, setShowPass] = useState(false);
+  const [form, setForm] = useState({ email: "", appRole: "user" });
   const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
   const [msg, setMsg] = useState(null);
+  const registerUrl = `${window.location.origin}/register`;
 
   useEffect(() => {
-    if (open) { setForm({ dni: "", email: "", password: "", appRole: "user" }); setMsg(null); setShowPass(false); }
+    if (open) { setForm({ email: "", appRole: "user" }); setMsg(null); setDone(false); }
   }, [open]);
 
   const handleCreate = async () => {
-    if (!form.dni.trim() || !form.email.trim() || !form.password.trim()) return;
-    if (!/^\d{8}$/.test(form.dni.trim())) {
-      setMsg({ type: "error", text: "El DNI debe tener exactamente 8 dígitos" });
-      return;
-    }
-    if (form.password.length < 6) {
-      setMsg({ type: "error", text: "La contraseña debe tener al menos 6 caracteres" });
-      return;
-    }
+    if (!form.email.trim()) return;
     setLoading(true);
     setMsg(null);
     try {
-      const res = await base44.auth.register({ email: form.email.trim(), password: form.password });
-      setMsg({ type: "success", text: `Usuario creado. Correo: ${form.email} | Contraseña inicial: ${form.password}. El usuario puede ingresar de inmediato.` });
+      await base44.users.inviteUser(form.email.trim(), form.appRole);
+      setDone(true);
     } catch (e) {
       setMsg({ type: "error", text: e.message || "Error al crear usuario" });
     } finally {
@@ -133,52 +126,59 @@ function CreateUserDialog({ open, onClose }) {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
-          <p className="text-sm text-muted-foreground">
-            Crea la cuenta directamente con una contraseña inicial. El usuario podrá ingresar de inmediato.
-          </p>
-          <div className="space-y-2">
-            <Label>DNI (identificador en el sistema)</Label>
-            <Input type="text" placeholder="Ej: 12345678" maxLength={8} value={form.dni}
-              onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, "") })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Correo electrónico</Label>
-            <Input type="email" placeholder="correo@ejemplo.com" value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Contraseña inicial</Label>
-            <div className="relative">
-              <Input type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              <button onClick={() => setShowPass(!showPass)} type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">Compártela con el usuario para que pueda ingresar</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Nivel de acceso</Label>
-            <Select value={form.appRole} onValueChange={(v) => setForm({ ...form, appRole: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="user">Usuario</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {msg && (
-            <p className={`text-sm px-3 py-2 rounded-lg ${msg.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-              {msg.text}
-            </p>
+          {!done ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Ingresa el correo del nuevo usuario. Luego compártele el enlace de registro para que cree su propia contraseña.
+              </p>
+              <div className="space-y-2">
+                <Label>Correo electrónico</Label>
+                <Input type="email" placeholder="correo@ejemplo.com" value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nivel de acceso</Label>
+                <Select value={form.appRole} onValueChange={(v) => setForm({ ...form, appRole: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="user">Usuario</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {msg && (
+                <p className="text-sm px-3 py-2 rounded-lg bg-red-50 text-red-600">{msg.text}</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={onClose}>Cancelar</Button>
+                <Button onClick={handleCreate} disabled={loading || !form.email.trim()} className="gap-2">
+                  <UserPlus className="w-4 h-4" /> {loading ? "Procesando..." : "Agregar Usuario"}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-3">
+                <p className="text-sm font-semibold text-emerald-800">✓ Usuario registrado en el sistema</p>
+                <p className="text-sm text-emerald-700">
+                  Comparte este enlace con <strong>{form.email}</strong> para que cree su contraseña:
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-white border rounded px-2 py-1 flex-1 truncate text-emerald-900">{registerUrl}</code>
+                  <Button size="sm" variant="outline" className="shrink-0"
+                    onClick={() => { navigator.clipboard.writeText(registerUrl); }}>
+                    Copiar
+                  </Button>
+                </div>
+                <p className="text-xs text-emerald-600">
+                  El usuario ingresa a ese enlace, escribe su correo y contraseña, verifica el código que le llega al correo, y listo.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={onClose}>Cerrar</Button>
+              </div>
+            </>
           )}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={handleCreate} disabled={loading || !form.dni.trim() || !form.email.trim() || !form.password.trim()} className="gap-2">
-              <UserPlus className="w-4 h-4" /> {loading ? "Creando..." : "Crear Usuario"}
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
