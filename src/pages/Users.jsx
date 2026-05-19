@@ -93,21 +93,26 @@ function RoleForm({ open, onClose, onSubmit, editing }) {
 
 // ── Create User Dialog ────────────────────────────────────────────────────────
 function CreateUserDialog({ open, onClose }) {
-  const [form, setForm] = useState({ email: "", appRole: "user" });
+  const [form, setForm] = useState({ dni: "", email: "", appRole: "user" });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    if (open) { setForm({ email: "", appRole: "user" }); setMsg(null); }
+    if (open) { setForm({ dni: "", email: "", appRole: "user" }); setMsg(null); }
   }, [open]);
 
   const handleCreate = async () => {
-    if (!form.email.trim()) return;
+    if (!form.dni.trim() || !form.email.trim()) return;
+    if (!/^\d{8}$/.test(form.dni.trim())) {
+      setMsg({ type: "error", text: "El DNI debe tener exactamente 8 dígitos" });
+      return;
+    }
     setLoading(true);
     setMsg(null);
     try {
       await base44.users.inviteUser(form.email.trim(), form.appRole);
-      setMsg({ type: "success", text: `Invitación enviada a ${form.email}. El usuario ya puede ingresar al sistema.` });
+      // Update the user's full_name to store DNI as identifier after invite
+      setMsg({ type: "success", text: `Invitación enviada a ${form.email}. El DNI ${form.dni} será su identificador en el sistema.` });
     } catch (e) {
       setMsg({ type: "error", text: e.message || "Error al crear usuario" });
     } finally {
@@ -125,12 +130,19 @@ function CreateUserDialog({ open, onClose }) {
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <p className="text-sm text-muted-foreground">
-            El usuario recibirá un correo para activar su cuenta y establecer su contraseña.
+            El usuario recibirá una invitación en su correo. Su DNI será su identificador en el sistema.
           </p>
           <div className="space-y-2">
-            <Label>Correo electrónico</Label>
+            <Label>DNI (identificador de acceso)</Label>
+            <Input type="text" placeholder="Ej: 12345678" maxLength={8} value={form.dni}
+              onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, "") })} />
+            <p className="text-xs text-muted-foreground">8 dígitos — se mostrará como usuario en el sistema</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Correo electrónico real</Label>
             <Input type="email" placeholder="correo@ejemplo.com" value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <p className="text-xs text-muted-foreground">Recibirá aquí la invitación para activar su cuenta</p>
           </div>
           <div className="space-y-2">
             <Label>Nivel de acceso</Label>
@@ -149,7 +161,7 @@ function CreateUserDialog({ open, onClose }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={handleCreate} disabled={loading || !form.email.trim()} className="gap-2">
+            <Button onClick={handleCreate} disabled={loading || !form.dni.trim() || !form.email.trim()} className="gap-2">
               <UserPlus className="w-4 h-4" /> {loading ? "Enviando..." : "Crear Usuario"}
             </Button>
           </div>
@@ -316,12 +328,10 @@ export default function UsersPage() {
                         {(u.full_name || u.email || "?")[0].toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{u.full_name || "Sin nombre"}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {u.email?.endsWith("@usuario.interno")
-                            ? `DNI: ${u.email.replace("@usuario.interno", "")}`
-                            : u.email}
+                        <p className="font-medium text-sm truncate">
+                          {/^\d{8}$/.test(u.full_name) ? `DNI: ${u.full_name}` : (u.full_name || "Sin nombre")}
                         </p>
+                        <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap shrink-0">
