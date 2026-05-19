@@ -4,13 +4,13 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, IdCard } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import { toast } from "@/components/ui/use-toast";
 
 export default function Register() {
-  const [email, setEmail] = useState("");
+  const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,9 +18,16 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
+  // El email se genera automáticamente a partir del DNI
+  const email = dni.trim() ? `${dni.trim()}@usuario.interno` : "";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!/^\d{8}$/.test(dni.trim())) {
+      setError("El DNI debe tener exactamente 8 dígitos");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden");
       return;
@@ -66,8 +73,8 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Verifica tu correo"
-        subtitle={`Enviamos un código a ${email}`}
+        title="Verifica tu identidad"
+        subtitle={`Enviamos un código de verificación`}
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -101,7 +108,7 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Crea tu cuenta"
-      subtitle="Completa el registro para acceder"
+      subtitle="Ingresa tu DNI y crea una contraseña"
       footer={
         <>
           ¿Ya tienes cuenta?{" "}
@@ -115,12 +122,23 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Correo electrónico</Label>
+          <Label htmlFor="dni">DNI</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input id="email" type="email" autoComplete="email" autoFocus placeholder="correo@ejemplo.com"
-              value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-12" required />
+            <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              id="dni"
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              placeholder="12345678"
+              maxLength={8}
+              value={dni}
+              onChange={(e) => setDni(e.target.value.replace(/\D/g, ""))}
+              className="pl-10 h-12"
+              required
+            />
           </div>
+          <p className="text-xs text-muted-foreground">Ingresa tus 8 dígitos del DNI</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Contraseña</Label>
