@@ -222,6 +222,78 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
   );
 }
 
+// ── Worker Card (mobile/tablet) ───────────────────────────────────────────────
+function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, paidToday, vacPaidToday }) {
+  const [expanded, setExpanded] = useState(false);
+  const workerDeductions = deductions.filter(
+    (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
+  );
+  const totalDed = workerDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
+  const periodSalary = getSalaryByType(w.salary, w.payment_type);
+  const neto = periodSalary - totalDed;
+  const vacStatus = getVacationStatus(w);
+  const alreadyPaid = paidToday?.includes(w.id);
+  const alreadyVacPaid = vacPaidToday?.includes(w.id);
+
+  return (
+    <div className="p-4 border-b last:border-b-0 hover:bg-muted/20 transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold">{w.name}</span>
+            {vacStatus && <Palmtree className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+            <Badge className={w.status === "activo" ? "bg-emerald-100 text-emerald-700 text-xs" : "bg-red-100 text-red-700 text-xs"}>
+              {w.status === "activo" ? "Activo" : "Inactivo"}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mt-0.5">{w.position || "—"}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm">
+            <span className="text-muted-foreground">Salario: <span className="font-semibold text-foreground">{formatCurrency(w.salary)}</span></span>
+            <span className="text-muted-foreground">A pagar: <span className="font-semibold text-primary">{formatCurrency(periodSalary)}</span></span>
+            {totalDed > 0 && <span className="text-muted-foreground">Desc: <span className="font-semibold text-red-500">-{formatCurrency(totalDed)}</span></span>}
+            <span className="text-muted-foreground">Neto: <span className="font-bold text-emerald-600">{formatCurrency(neto)}</span></span>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+            <Badge variant="secondary" className="font-normal">{paymentTypeLabels[w.payment_type]}</Badge>
+            {w.hire_date && <span>{format(new Date(+w.hire_date.split("-")[0], +w.hire_date.split("-")[1]-1, +w.hire_date.split("-")[2]), "dd MMM yyyy", { locale: es })}</span>}
+          </div>
+          {workerDeductions.length > 0 && (
+            <button onClick={() => setExpanded(!expanded)} className="mt-2 text-xs text-primary flex items-center gap-1">
+              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {workerDeductions.length} descuento{workerDeductions.length > 1 ? "s" : ""}/adelanto{workerDeductions.length > 1 ? "s" : ""}
+            </button>
+          )}
+          {expanded && (
+            <div className="mt-2 space-y-1 pl-2 border-l-2 border-red-200">
+              {workerDeductions.map((d) => (
+                <p key={d.id} className="text-xs text-red-600 italic">
+                  {d.type === "descuento" ? "Descuento" : "Adelanto"}: {d.concept} · Cuota {(d.paid_installments||0)+1}/{d.installments} · -{formatCurrency(getInstallmentAmount(d))}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-1 shrink-0">
+          <Button size="sm" onClick={alreadyPaid ? undefined : () => onPayClick(w)} disabled={alreadyPaid}
+            className={`gap-1 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+            <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
+          </Button>
+          {vacStatus && (
+            <Button size="sm" onClick={alreadyVacPaid ? undefined : () => onVacClick(w)} disabled={alreadyVacPaid}
+              className={`gap-1 h-7 px-2 text-xs ${alreadyVacPaid ? "bg-amber-700 hover:bg-amber-700 cursor-not-allowed opacity-80" : "bg-amber-500 hover:bg-amber-600"}`}>
+              <Palmtree className="w-3.5 h-3.5" /> {alreadyVacPaid ? "Pagado" : "Vac."}
+            </Button>
+          )}
+          <div className="flex gap-1 justify-end">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(w.id)}><Trash2 className="w-4 h-4" /></Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Table ───────────────────────────────────────────────────────────────
 export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, paidToday, vacPaidToday }) {
   const [payWorker, setPayWorker] = useState(null);
@@ -234,14 +306,29 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
   return (
     <>
       <div className="bg-card rounded-2xl border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile / Tablet: card view */}
+        <div className="lg:hidden">
+          {workers.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">No hay trabajadores registrados</div>
+          ) : (
+            workers.map((w) => (
+              <WorkerCard key={w.id} w={w} deductions={deductions}
+                onEdit={onEdit} onDelete={onDelete}
+                onPayClick={setPayWorker} onVacClick={setVacWorker}
+                paidToday={paidToday} vacPaidToday={vacPaidToday} />
+            ))
+          )}
+        </div>
+
+        {/* Desktop: table view */}
+        <div className="hidden lg:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">Nombre</TableHead>
                 <TableHead className="font-semibold">Cargo</TableHead>
                 <TableHead className="font-semibold text-right">Salario Mensual</TableHead>
-                <TableHead className="font-semibold text-right">A Pagar ({" "}período)</TableHead>
+                <TableHead className="font-semibold text-right">A Pagar (período)</TableHead>
                 <TableHead className="font-semibold text-right">Descuentos</TableHead>
                 <TableHead className="font-semibold text-right">Neto</TableHead>
                 <TableHead className="font-semibold">Tipo</TableHead>
@@ -344,8 +431,9 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
             </TableBody>
           </Table>
         </div>
+
         {workers.length > 0 && (
-          <div className="border-t px-6 py-4 flex justify-between items-center bg-primary/5">
+          <div className="border-t px-4 lg:px-6 py-4 flex justify-between items-center bg-primary/5">
             <span className="font-semibold text-sm">Total Planilla Mensual</span>
             <span className="text-xl font-bold text-primary">{formatCurrency(totalPayroll)}</span>
           </div>
