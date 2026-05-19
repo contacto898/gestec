@@ -6,7 +6,13 @@ import { Users, TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
+
+function parseLocalDate(str) {
+  if (!str) return new Date();
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 import { es } from "date-fns/locale";
 
 function formatCurrency(n) {
@@ -63,7 +69,7 @@ export default function Dashboard() {
   const expenseByMonth = groupByMonth(expenses);
   const chartMonths = [...new Set([...Object.keys(incomeByMonth), ...Object.keys(expenseByMonth)])].sort();
   const chartData = chartMonths.map((m) => ({
-    month: format(parseISO(m + "-01"), "MMM yy", { locale: es }),
+    month: format(parseLocalDate(m + "-01"), "MMM yy", { locale: es }),
     Ingresos: incomeByMonth[m] || 0,
     Gastos: expenseByMonth[m] || 0,
   }));
@@ -74,7 +80,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
-            Resumen financiero — {format(new Date(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}
+            Resumen financiero — {format(parseLocalDate(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}
           </p>
         </div>
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -85,7 +91,7 @@ export default function Dashboard() {
             <SelectItem value="current">Mes actual</SelectItem>
             {allMonths.map((m) => (
               <SelectItem key={m} value={m}>
-                {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+                {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
               </SelectItem>
             ))}
           </SelectContent>
@@ -131,7 +137,7 @@ export default function Dashboard() {
               <p className={`text-2xl font-bold mt-0.5 ${balanceMes >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {formatCurrency(balanceMes)}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{format(new Date(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{format(parseLocalDate(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}</p>
             </div>
             <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Balance Total</p>
