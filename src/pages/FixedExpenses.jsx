@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, Building2, Calendar, LayoutGrid, CheckCircle, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, Calendar, LayoutGrid, CheckCircle, Tag, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -241,6 +241,7 @@ export default function FixedExpenses() {
   const [payItem, setPayItem] = useState(null);
   const [view, setView] = useState("list");
   const [paidToday, setPaidToday] = useState(() => getPaidToday("gastos_fijos"));
+  const [selectedMonth, setSelectedMonth] = useState("all");
   const qc = useQueryClient();
 
   const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list("-created_date") });
@@ -282,10 +283,16 @@ export default function FixedExpenses() {
     setPaidToday(getPaidToday("gastos_fijos"));
   };
 
-  const activeItems = fixedExpenses.filter((f) => f.status === "activo");
+  // Month filter applied to due_date
+  const allMonths = [...new Set(fixedExpenses.map(f => f.due_date?.substring(0, 7)).filter(Boolean))].sort().reverse();
+  const filteredExpenses = selectedMonth === "all"
+    ? fixedExpenses
+    : fixedExpenses.filter(f => f.due_date?.startsWith(selectedMonth));
+
+  const activeItems = filteredExpenses.filter((f) => f.status === "activo");
   const totalActive = activeItems.reduce((s, f) => s + (f.amount || 0), 0);
 
-  const byCategory = fixedExpenses.reduce((acc, item) => {
+  const byCategory = filteredExpenses.reduce((acc, item) => {
     const cat = item.category || "Sin categoría";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(item);
@@ -327,20 +334,38 @@ export default function FixedExpenses() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant={view === "list" ? "default" : "outline"} size="sm" onClick={() => setView("list")}>Lista</Button>
-        <Button variant={view === "category" ? "default" : "outline"} size="sm" onClick={() => setView("category")}>
-          <LayoutGrid className="w-4 h-4 mr-1" /> Por categoría
-        </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant={view === "list" ? "default" : "outline"} size="sm" onClick={() => setView("list")}>Lista</Button>
+          <Button variant={view === "category" ? "default" : "outline"} size="sm" onClick={() => setView("category")}>
+            <LayoutGrid className="w-4 h-4 mr-1" /> Por categoría
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-44 h-8 text-sm">
+              <SelectValue placeholder="Todos los meses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los meses</SelectItem>
+              {allMonths.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {view === "list" && (
         <div className="bg-card rounded-2xl border overflow-hidden">
-          {fixedExpenses.length === 0 ? (
+          {filteredExpenses.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">No hay gastos fijos registrados</div>
           ) : (
             <div className="divide-y">
-              {fixedExpenses.map((item) => (
+              {filteredExpenses.map((item) => (
                 <FixedExpenseRow key={item.id} item={item} payments={payments}
                   onEdit={(i) => { setEditing(i); setFormOpen(true); }}
                   onDelete={(id) => deleteMut.mutate(id)}
@@ -349,7 +374,7 @@ export default function FixedExpenses() {
               ))}
               <div className="px-5 py-4 flex justify-between items-center bg-primary/5">
                 <span className="font-semibold">Total General</span>
-                <span className="text-xl font-bold text-primary">{formatCurrency(fixedExpenses.reduce((s, f) => s + (f.amount || 0), 0))}</span>
+                <span className="text-xl font-bold text-primary">{formatCurrency(filteredExpenses.reduce((s, f) => s + (f.amount || 0), 0))}</span>
               </div>
             </div>
           )}
@@ -363,6 +388,7 @@ export default function FixedExpenses() {
           ) : (
             Object.entries(byCategory).map(([cat, items]) => {
               const catTotal = items.reduce((s, i) => s + (i.amount || 0), 0);
+              
               return (
                 <Card key={cat} className="overflow-hidden">
                   <div className="px-5 py-4 flex justify-between items-center bg-muted/30 border-b">
@@ -389,7 +415,7 @@ export default function FixedExpenses() {
           {Object.keys(byCategory).length > 0 && (
             <Card className="p-4 flex justify-between items-center bg-primary/5">
               <span className="font-semibold">Total General</span>
-              <span className="text-xl font-bold text-primary">{formatCurrency(fixedExpenses.reduce((s, f) => s + (f.amount || 0), 0))}</span>
+              <span className="text-xl font-bold text-primary">{formatCurrency(filteredExpenses.reduce((s, f) => s + (f.amount || 0), 0))}</span>
             </Card>
           )}
         </div>

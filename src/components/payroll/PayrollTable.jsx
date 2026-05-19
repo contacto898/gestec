@@ -46,12 +46,14 @@ function getVacationStatus(worker) {
 
 // ── Vacation Dialog ──────────────────────────────────────────────────────────
 function VacationDialog({ open, onClose, worker, onConfirm }) {
-  const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto"
-  const [daysOff, setDaysOff] = useState(7); // for mixto
+  const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto" | "acumular"
+  const [daysOff, setDaysOff] = useState(7);
+  const [vacStartDate, setVacStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const vacAmount = worker?.salary / 2 || 0;
 
   const paidAmount = option === "vacaciones" ? 0
     : option === "mixto" ? vacAmount * (1 - daysOff / 15)
+    : option === "acumular" ? 0
     : vacAmount;
 
   return (
@@ -70,8 +72,9 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
             <div className="space-y-2">
               {[
                 { value: "pago", label: "Se paga el medio mes completo", desc: "No toma días libres" },
-                { value: "vacaciones", label: "Toma vacaciones completas", desc: "15 días libres, sin pago extra" },
-                { value: "mixto", label: "Vacaciones parciales + pago", desc: "Parte libre, parte pagada" },
+                { value: "vacaciones", label: "Toma vacaciones completas (15 días)", desc: "Días libres, sin pago extra" },
+                { value: "mixto", label: "Vacaciones parciales + pago", desc: "Parte días libres, parte pagada" },
+                { value: "acumular", label: "Acumular para el próximo año", desc: "No toma ni cobra ahora, se guarda" },
               ].map((opt) => (
                 <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${option === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}>
                   <input type="radio" className="mt-0.5" value={opt.value} checked={option === opt.value} onChange={() => setOption(opt.value)} />
@@ -83,16 +86,33 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
               ))}
             </div>
           </div>
+
+          {/* Fecha de inicio de vacaciones (para opciones que implican días libres) */}
+          {(option === "vacaciones" || option === "mixto") && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Fecha de inicio de vacaciones</label>
+              <input type="date" value={vacStartDate} onChange={(e) => setVacStartDate(e.target.value)}
+                className="w-full border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+            </div>
+          )}
+
           {option === "mixto" && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Días libres (de 15)</label>
               <input type="range" min={1} max={14} value={daysOff} onChange={(e) => setDaysOff(+e.target.value)} className="w-full" />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{daysOff} días libres</span>
+                <span>{daysOff} días libres desde {vacStartDate}</span>
                 <span>Pago: {formatCurrency(vacAmount * (1 - daysOff / 15))}</span>
               </div>
             </div>
           )}
+
+          {option === "acumular" && (
+            <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
+              Las vacaciones quedan registradas como tomadas (se marca la fecha) pero no se genera pago ni días libres. Se acumulan para el próximo ciclo.
+            </div>
+          )}
+
           {paidAmount > 0 && (
             <div className="p-3 rounded-xl bg-emerald-50 flex justify-between items-center">
               <span className="text-sm font-medium text-emerald-700">Monto a pagar</span>
@@ -101,7 +121,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={() => { onConfirm(worker, option, paidAmount, daysOff); onClose(); }}
+            <Button onClick={() => { onConfirm(worker, option, paidAmount, daysOff, vacStartDate); onClose(); }}
               className="bg-amber-500 hover:bg-amber-600 gap-2">
               <Palmtree className="w-4 h-4" /> Confirmar
             </Button>

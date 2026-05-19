@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Shield, UserPlus, Mail, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, UserPlus, Users, Eye, EyeOff, KeyRound } from "lucide-react";
 
 const ALL_PERMISSIONS = [
   { id: "dashboard", label: "Dashboard" },
@@ -24,10 +24,12 @@ const ALL_PERMISSIONS = [
 
 const ROLE_COLORS = ["#4F63D2", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
-// ── Role Form ─────────────────────────────────────────────────────────────────
+// ── Role Form ──────────────────────────────────────────────────────────────────
 function RoleForm({ open, onClose, onSubmit, editing }) {
   const init = editing || { name: "", description: "", permissions: ["dashboard"], color: ROLE_COLORS[0] };
   const [form, setForm] = useState(init);
+
+  useEffect(() => { if (open) setForm(editing || init); }, [open, editing]);
 
   const togglePermission = (id) => {
     setForm((f) => ({
@@ -89,23 +91,40 @@ function RoleForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-// ── Invite User Dialog ────────────────────────────────────────────────────────
-function InviteUserDialog({ open, onClose }) {
-  const [email, setEmail] = useState("");
-  const [appRole, setAppRole] = useState("user");
+// ── Create User Dialog (admin creates user + password) ────────────────────────
+function CreateUserDialog({ open, onClose }) {
+  const [form, setForm] = useState({ email: "", password: "", confirmPassword: "", appRole: "user" });
+  const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  const handleInvite = async () => {
-    if (!email.trim()) return;
+  useEffect(() => {
+    if (open) { setForm({ email: "", password: "", confirmPassword: "", appRole: "user" }); setMsg(null); }
+  }, [open]);
+
+  const handleCreate = async () => {
+    if (!form.email.trim() || !form.password.trim()) return;
+    if (form.password !== form.confirmPassword) {
+      setMsg({ type: "error", text: "Las contraseñas no coinciden" });
+      return;
+    }
+    if (form.password.length < 6) {
+      setMsg({ type: "error", text: "La contraseña debe tener al menos 6 caracteres" });
+      return;
+    }
     setLoading(true);
     setMsg(null);
     try {
-      await base44.users.inviteUser(email.trim(), appRole);
-      setMsg({ type: "success", text: `Invitación enviada a ${email}` });
-      setEmail("");
+      await base44.auth.register({ email: form.email.trim(), password: form.password });
+      setMsg({ type: "success", text: `Usuario ${form.email} creado. Debe verificar su correo para activar la cuenta.` });
     } catch (e) {
-      setMsg({ type: "error", text: e.message || "Error al enviar invitación" });
+      // Try invite as fallback
+      try {
+        await base44.users.inviteUser(form.email.trim(), form.appRole);
+        setMsg({ type: "success", text: `Se envió invitación a ${form.email}. El usuario recibirá un email para activar su cuenta.` });
+      } catch (e2) {
+        setMsg({ type: "error", text: e2.message || "Error al crear usuario" });
+      }
     } finally {
       setLoading(false);
     }
@@ -116,19 +135,34 @@ function InviteUserDialog({ open, onClose }) {
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5" /> Invitar Usuario
+            <UserPlus className="w-5 h-5" /> Crear Nuevo Usuario
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="space-y-2">
             <Label>Correo electrónico</Label>
-            <Input type="email" placeholder="usuario@ejemplo.com" value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleInvite()} />
+            <Input type="email" placeholder="usuario@ejemplo.com" value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Contraseña inicial</Label>
+            <div className="relative">
+              <Input type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres"
+                value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <button onClick={() => setShowPass(!showPass)} type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Confirmar contraseña</Label>
+            <Input type={showPass ? "text" : "password"} placeholder="Repite la contraseña"
+              value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Nivel de acceso</Label>
-            <Select value={appRole} onValueChange={setAppRole}>
+            <Select value={form.appRole} onValueChange={(v) => setForm({ ...form, appRole: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Administrador</SelectItem>
@@ -143,8 +177,8 @@ function InviteUserDialog({ open, onClose }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={handleInvite} disabled={loading || !email.trim()} className="gap-2">
-              <Mail className="w-4 h-4" /> {loading ? "Enviando..." : "Enviar invitación"}
+            <Button onClick={handleCreate} disabled={loading || !form.email.trim() || !form.password.trim()} className="gap-2">
+              <UserPlus className="w-4 h-4" /> {loading ? "Creando..." : "Crear Usuario"}
             </Button>
           </div>
         </div>
@@ -153,11 +187,89 @@ function InviteUserDialog({ open, onClose }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Change Password Dialog ────────────────────────────────────────────────────
+function ChangePasswordDialog({ open, onClose }) {
+  const [form, setForm] = useState({ current: "", newPass: "", confirm: "" });
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    if (open) { setForm({ current: "", newPass: "", confirm: "" }); setMsg(null); }
+  }, [open]);
+
+  const handleChange = async () => {
+    if (!form.newPass || !form.confirm) return;
+    if (form.newPass !== form.confirm) {
+      setMsg({ type: "error", text: "Las contraseñas nuevas no coinciden" });
+      return;
+    }
+    if (form.newPass.length < 6) {
+      setMsg({ type: "error", text: "La nueva contraseña debe tener al menos 6 caracteres" });
+      return;
+    }
+    setLoading(true);
+    setMsg(null);
+    try {
+      // Use base44 auth to update password
+      await base44.auth.updateMe({ password: form.newPass });
+      setMsg({ type: "success", text: "Contraseña actualizada correctamente" });
+      setTimeout(() => onClose(), 1500);
+    } catch (e) {
+      setMsg({ type: "error", text: e.message || "Error al cambiar contraseña" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5" /> Cambiar mi Contraseña
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="space-y-2">
+            <Label>Nueva contraseña</Label>
+            <div className="relative">
+              <Input type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres"
+                value={form.newPass} onChange={(e) => setForm({ ...form, newPass: e.target.value })} />
+              <button onClick={() => setShowPass(!showPass)} type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Confirmar nueva contraseña</Label>
+            <Input type={showPass ? "text" : "password"} placeholder="Repite la contraseña"
+              value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
+          </div>
+          {msg && (
+            <p className={`text-sm px-3 py-2 rounded-lg ${msg.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+              {msg.text}
+            </p>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button onClick={handleChange} disabled={loading || !form.newPass.trim() || !form.confirm.trim()} className="gap-2">
+              <KeyRound className="w-4 h-4" /> {loading ? "Actualizando..." : "Cambiar Contraseña"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Main Page ──────────────────────────────────────────────────────────────────
 export default function UsersPage() {
   const [roleFormOpen, setRoleFormOpen] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
-  const [inviteOpen, setInviteOpen] = useState(false);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [changePassOpen, setChangePassOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const qc = useQueryClient();
 
@@ -201,11 +313,14 @@ export default function UsersPage() {
           <p className="text-muted-foreground mt-1">Administra usuarios, roles y permisos del sistema</p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setChangePassOpen(true)} className="gap-2">
+            <KeyRound className="w-4 h-4" /> Cambiar mi Clave
+          </Button>
           <Button variant="outline" onClick={() => { setEditingRole(null); setRoleFormOpen(true); }} className="gap-2">
             <Shield className="w-4 h-4" /> Nuevo Rol
           </Button>
-          <Button onClick={() => setInviteOpen(true)} className="gap-2">
-            <UserPlus className="w-4 h-4" /> Invitar Usuario
+          <Button onClick={() => setCreateUserOpen(true)} className="gap-2">
+            <UserPlus className="w-4 h-4" /> Crear Usuario
           </Button>
         </div>
       </div>
@@ -233,12 +348,18 @@ export default function UsersPage() {
                         <p className="text-xs text-muted-foreground">{u.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge className={u.role === "admin" ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"}>
                         {u.role === "admin" ? "Administrador" : "Usuario"}
                       </Badge>
                       {u.id === currentUser?.id && (
                         <Badge variant="outline" className="text-xs">Tú</Badge>
+                      )}
+                      {u.id === currentUser?.id && (
+                        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs"
+                          onClick={() => setChangePassOpen(true)}>
+                          <KeyRound className="w-3 h-3" /> Cambiar clave
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -250,7 +371,6 @@ export default function UsersPage() {
 
         <TabsContent value="roles" className="mt-4">
           <div className="space-y-3">
-            {/* Built-in roles */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { name: "Administrador", description: "Acceso total al sistema", permissions: ALL_PERMISSIONS.map(p => p.id), color: "#4F63D2", builtin: true },
@@ -273,7 +393,6 @@ export default function UsersPage() {
                 </Card>
               ))}
             </div>
-            {/* Custom roles */}
             {roles.map((role) => (
               <Card key={role.id} className="p-4 border-2" style={{ borderColor: (role.color || "#4F63D2") + "30" }}>
                 <div className="flex items-start justify-between mb-3">
@@ -300,9 +419,6 @@ export default function UsersPage() {
                     return perm ? <Badge key={pid} variant="outline" className="text-xs">{perm.label}</Badge> : null;
                   })}
                 </div>
-                {role.created_by && (
-                  <p className="text-[10px] text-muted-foreground mt-2">Creado por: {role.created_by}</p>
-                )}
               </Card>
             ))}
             {roles.length === 0 && (
@@ -316,7 +432,8 @@ export default function UsersPage() {
 
       <RoleForm open={roleFormOpen} onClose={() => { setRoleFormOpen(false); setEditingRole(null); }}
         onSubmit={handleRoleSubmit} editing={editingRole} />
-      <InviteUserDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <CreateUserDialog open={createUserOpen} onClose={() => setCreateUserOpen(false)} />
+      <ChangePasswordDialog open={changePassOpen} onClose={() => setChangePassOpen(false)} />
     </div>
   );
 }

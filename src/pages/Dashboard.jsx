@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import StatsCard from "@/components/dashboard/StatsCard";
 import { Users, TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 function formatCurrency(n) {
@@ -23,21 +25,29 @@ function groupByMonth(items) {
 }
 
 export default function Dashboard() {
+  const [selectedMonth, setSelectedMonth] = useState("current");
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list() });
   const { data: incomes = [] } = useQuery({ queryKey: ["incomes"], queryFn: () => base44.entities.Income.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
   const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list() });
 
-  // Current month
   const now = new Date();
   const currentMonthKey = format(now, "yyyy-MM");
+
+  // Build available months
+  const allMonths = [...new Set([
+    ...incomes.map(i => i.date?.substring(0, 7)),
+    ...expenses.map(e => e.date?.substring(0, 7)),
+  ].filter(Boolean))].sort().reverse();
+
+  const activeMonthKey = selectedMonth === "current" ? currentMonthKey : selectedMonth;
 
   const activeWorkers = workers.filter((w) => w.status === "activo");
   const totalPayroll = activeWorkers.reduce((s, w) => s + (w.salary || 0), 0);
 
   // Month totals
-  const monthIncomes = incomes.filter((i) => i.date && i.date.startsWith(currentMonthKey));
-  const monthExpenses = expenses.filter((e) => e.date && e.date.startsWith(currentMonthKey));
+  const monthIncomes = incomes.filter((i) => i.date && i.date.startsWith(activeMonthKey));
+  const monthExpenses = expenses.filter((e) => e.date && e.date.startsWith(activeMonthKey));
   const totalMonthIncome = monthIncomes.reduce((s, i) => s + (i.amount || 0), 0);
   const totalMonthExpense = monthExpenses.reduce((s, e) => s + (e.amount || 0), 0);
   const balanceMes = totalMonthIncome - totalMonthExpense;
@@ -51,8 +61,8 @@ export default function Dashboard() {
 
   const incomeByMonth = groupByMonth(incomes);
   const expenseByMonth = groupByMonth(expenses);
-  const allMonths = [...new Set([...Object.keys(incomeByMonth), ...Object.keys(expenseByMonth)])].sort();
-  const chartData = allMonths.map((m) => ({
+  const chartMonths = [...new Set([...Object.keys(incomeByMonth), ...Object.keys(expenseByMonth)])].sort();
+  const chartData = chartMonths.map((m) => ({
     month: format(parseISO(m + "-01"), "MMM yy", { locale: es }),
     Ingresos: incomeByMonth[m] || 0,
     Gastos: expenseByMonth[m] || 0,
@@ -60,11 +70,26 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Resumen financiero — {format(now, "MMMM yyyy", { locale: es })}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Resumen financiero — {format(new Date(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}
+          </p>
+        </div>
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="current">Mes actual</SelectItem>
+            {allMonths.map((m) => (
+              <SelectItem key={m} value={m}>
+                {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Stats row: 2 cols mobile, 3 tablet, 5 desktop */}
@@ -106,7 +131,7 @@ export default function Dashboard() {
               <p className={`text-2xl font-bold mt-0.5 ${balanceMes >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {formatCurrency(balanceMes)}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{format(now, "MMMM yyyy", { locale: es })}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 capitalize">{format(new Date(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}</p>
             </div>
             <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Balance Total</p>

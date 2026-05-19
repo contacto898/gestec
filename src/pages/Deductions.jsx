@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, User, Calendar, CreditCard, Minus } from "lucide-react";
+import { Plus, Pencil, Trash2, User, Calendar, CreditCard, Minus, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -188,6 +188,7 @@ export default function Deductions() {
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState("descuento");
   const [editing, setEditing] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState("all");
   const qc = useQueryClient();
 
   const { data: deductions = [] } = useQuery({ queryKey: ["deductions"], queryFn: () => base44.entities.Deduction.list("-created_date") });
@@ -205,8 +206,13 @@ export default function Deductions() {
   const openForm = (type) => { setFormType(type); setEditing(null); setFormOpen(true); };
   const handleEdit = (item) => { setFormType(item.type); setEditing(item); setFormOpen(true); };
 
-  const descuentos = deductions.filter((d) => d.type === "descuento");
-  const adelantos = deductions.filter((d) => d.type === "adelanto");
+  const allMonths = [...new Set(deductions.map(d => d.start_date?.substring(0, 7)).filter(Boolean))].sort().reverse();
+  const filteredDeductions = selectedMonth === "all"
+    ? deductions
+    : deductions.filter(d => d.start_date?.startsWith(selectedMonth));
+
+  const descuentos = filteredDeductions.filter((d) => d.type === "descuento");
+  const adelantos = filteredDeductions.filter((d) => d.type === "adelanto");
 
   const totalDescuentos = descuentos.reduce((s, d) => s + (d.total_amount || 0), 0);
   const totalAdelantos = adelantos.reduce((s, d) => s + (d.total_amount || 0), 0);
@@ -249,6 +255,23 @@ export default function Deductions() {
             <p className="text-xs text-amber-500">{adelantos.length} registros</p>
           </div>
         </Card>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Filter className="w-4 h-4 text-muted-foreground" />
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-44 h-8 text-sm">
+            <SelectValue placeholder="Todos los meses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los meses</SelectItem>
+            {allMonths.map((m) => (
+              <SelectItem key={m} value={m}>
+                {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs defaultValue="descuentos">

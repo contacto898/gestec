@@ -57,7 +57,7 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
                     <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDelete(item.id)} className="text-destructive hover:text-destructive">
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(item.id, item)} className="text-destructive hover:text-destructive">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>

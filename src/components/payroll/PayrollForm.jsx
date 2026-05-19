@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,12 @@ const INITIAL = { name: "", position: "", salary: "", payment_type: "mensual", p
 
 export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) {
   const [form, setForm] = useState(editingWorker || INITIAL);
+
+  useEffect(() => {
+    if (open) {
+      setForm(editingWorker || INITIAL);
+    }
+  }, [open, editingWorker]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

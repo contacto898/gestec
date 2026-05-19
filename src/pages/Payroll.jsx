@@ -45,18 +45,23 @@ export default function Payroll() {
     setPaidToday(getPaidToday("planilla"));
   };
 
-  const handleVacation = async (worker, option, paidAmount, daysOff) => {
+  const handleVacation = async (worker, option, paidAmount, daysOff, vacStartDate) => {
     const today = format(new Date(), "yyyy-MM-dd");
+    const dateRef = vacStartDate || today;
     if (paidAmount > 0) {
       await createExpense.mutateAsync({
-        description: `Vacaciones — ${worker.name} (${option === "pago" ? "pago completo" : option === "mixto" ? `${daysOff} días libres + pago parcial` : "solo días libres"})`,
+        description: `Vacaciones — ${worker.name} (${
+          option === "pago" ? "pago completo" :
+          option === "mixto" ? `${daysOff} días libres desde ${dateRef} + pago parcial` :
+          "solo días libres"
+        })`,
         amount: paidAmount,
         date: today,
-        category: "Planilla",
+        category: "planilla",
       });
     }
-    // Mark vacation date on worker
-    updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: today } });
+    // Mark vacation date on worker (use vacStartDate if available)
+    updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: dateRef } });
     addPaidToday("planilla", worker.id);
     setPaidToday(getPaidToday("planilla"));
   };
