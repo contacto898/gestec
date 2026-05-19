@@ -20,6 +20,7 @@ export default function Payroll() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [paidToday, setPaidToday] = useState(() => getPaidToday("planilla"));
+  const [vacPaidToday, setVacPaidToday] = useState(() => getPaidToday("vacaciones"));
   const qc = useQueryClient();
 
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list("-created_date") });
@@ -75,12 +76,13 @@ export default function Payroll() {
         category: "planilla",
       });
     }
-    // For "acumular" with days to take now, note it. For pure accumulate (0 days), don't advance vacation_paid_date.
     const shouldMarkDate = option !== "acumular" || days > 0;
     if (shouldMarkDate) {
       updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: dateRef } });
     }
-    addPaidToday("planilla", worker.id);
+    // Use separate prefix so the salary "Pagar" button is NOT affected
+    addPaidToday("vacaciones", worker.id);
+    setVacPaidToday(getPaidToday("vacaciones"));
     setPaidToday(getPaidToday("planilla"));
   };
 
@@ -104,6 +106,7 @@ export default function Payroll() {
         onPay={handlePay}
         onVacation={handleVacation}
         paidToday={paidToday}
+        vacPaidToday={vacPaidToday}
       />
 
       <PayrollForm

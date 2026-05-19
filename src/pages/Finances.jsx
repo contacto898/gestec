@@ -49,11 +49,13 @@ export default function Finances() {
   const { data: incomes = [] } = useQuery({
     queryKey: ["incomes"],
     queryFn: () => base44.entities.Income.list("-date"),
+    staleTime: 0,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["expenses"],
     queryFn: () => base44.entities.Expense.list("-date"),
+    staleTime: 0,
   });
 
   const { data: workers = [] } = useQuery({
@@ -132,7 +134,7 @@ export default function Finances() {
       const worker = workers.find((w) => w.name === workerName);
       if (worker) {
         updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: null } });
-        removePaidToday("planilla", worker.id);
+        removePaidToday("vacaciones", worker.id);
       }
     }
 

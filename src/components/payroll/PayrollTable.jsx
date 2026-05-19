@@ -221,7 +221,7 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
 }
 
 // ── Main Table ───────────────────────────────────────────────────────────────
-export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, paidToday }) {
+export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, paidToday, vacPaidToday }) {
   const [payWorker, setPayWorker] = useState(null);
   const [vacWorker, setVacWorker] = useState(null);
   const [expanded, setExpanded] = useState({});
@@ -258,6 +258,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                 const neto = periodSalary - totalDed;
                 const vacStatus = getVacationStatus(w);
                 const alreadyPaid = paidToday?.includes(w.id);
+                const alreadyVacPaid = vacPaidToday?.includes(w.id);
 
                 return [
                   <TableRow key={w.id} className="hover:bg-muted/30 transition-colors">
@@ -305,9 +306,11 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                           <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
                         </Button>
                         {vacStatus && (
-                          <Button size="sm" onClick={() => setVacWorker(w)}
-                            className="gap-1 h-7 px-2 text-xs bg-amber-500 hover:bg-amber-600">
-                            <Palmtree className="w-3.5 h-3.5" /> Vac.
+                          <Button size="sm"
+                            onClick={alreadyVacPaid ? undefined : () => setVacWorker(w)}
+                            disabled={alreadyVacPaid}
+                            className={`gap-1 h-7 px-2 text-xs ${alreadyVacPaid ? "bg-amber-700 hover:bg-amber-700 cursor-not-allowed opacity-80" : "bg-amber-500 hover:bg-amber-600"}`}>
+                            <Palmtree className="w-3.5 h-3.5" /> {alreadyVacPaid ? "Pagado" : "Vac."}
                           </Button>
                         )}
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
