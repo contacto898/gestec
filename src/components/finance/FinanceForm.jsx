@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,24 @@ import { base44 } from "@/api/base44Client";
 const FALLBACK_INCOME = [{ name: "Ventas" }, { name: "Servicios" }, { name: "Inversiones" }, { name: "Préstamos" }, { name: "Otros" }];
 const FALLBACK_EXPENSE = [{ name: "Planilla" }, { name: "Alquiler" }, { name: "Servicios" }, { name: "Materiales" }, { name: "Transporte" }, { name: "Impuestos" }, { name: "Otros" }];
 
+function getTodayLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default function FinanceForm({ open, onClose, onSubmit, type, editing }) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayLocal();
   const [form, setForm] = useState(editing || { description: "", amount: "", date: today, category: "" });
+
+  // Reload form data when editing item changes
+  useEffect(() => {
+    if (open) {
+      setForm(editing || { description: "", amount: "", date: today, category: "" });
+    }
+  }, [open, editing]);
 
   const { data: allCategories = [] } = useQuery({
     queryKey: ["categories"],
