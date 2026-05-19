@@ -1,0 +1,30 @@
+{
+  "name": "Category",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre de la categor\u00eda"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "ingreso",
+        "gasto"
+      ],
+      "description": "Tipo: ingreso o gasto"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n"
+    },
+    "color": {
+      "type": "string",
+      "description": "Color en hex"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

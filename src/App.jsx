@@ -14,6 +14,9 @@ import AppLayout from "@/components/layout/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Payroll from "@/pages/Payroll";
 import Finances from "@/pages/Finances";
+import Categories from "@/pages/Categories";
+import Deductions from "@/pages/Deductions";
+import FixedExpenses from "@/pages/FixedExpenses";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -27,12 +30,8 @@ const AuthenticatedApp = () => {
   }
 
   if (authError) {
-    if (authError.type === "user_not_registered") {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === "auth_required") {
-      navigateToLogin();
-      return null;
-    }
+    if (authError.type === "user_not_registered") return <UserNotRegisteredError />;
+    if (authError.type === "auth_required") { navigateToLogin(); return null; }
   }
 
   return (
@@ -46,6 +45,9 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/planilla" element={<Payroll />} />
           <Route path="/finanzas" element={<Finances />} />
+          <Route path="/categorias" element={<Categories />} />
+          <Route path="/descuentos" element={<Deductions />} />
+          <Route path="/gastos-fijos" element={<FixedExpenses />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

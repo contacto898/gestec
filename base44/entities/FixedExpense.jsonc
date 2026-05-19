@@ -1,0 +1,55 @@
+{
+  "name": "FixedExpense",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del gasto fijo"
+    },
+    "company": {
+      "type": "string",
+      "description": "Empresa o proveedor"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monto"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de vencimiento o pago"
+    },
+    "category": {
+      "type": "string",
+      "description": "Categor\u00eda (ej: pr\u00e9stamo, recibo, seguro)"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "mensual",
+        "bimestral",
+        "trimestral",
+        "semestral",
+        "anual",
+        "unico"
+      ],
+      "default": "mensual",
+      "description": "Frecuencia del gasto"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "activo",
+        "pausado",
+        "cancelado"
+      ],
+      "default": "activo"
+    }
+  },
+  "required": [
+    "description",
+    "company",
+    "amount",
+    "due_date"
+  ]
+}

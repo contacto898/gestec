@@ -1,0 +1,73 @@
+{
+  "name": "Deduction",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "descuento",
+        "adelanto"
+      ],
+      "description": "Tipo: descuento o adelanto"
+    },
+    "worker_id": {
+      "type": "string",
+      "description": "ID del trabajador"
+    },
+    "worker_name": {
+      "type": "string",
+      "description": "Nombre del trabajador (copia)"
+    },
+    "concept": {
+      "type": "string",
+      "description": "Concepto del descuento o adelanto"
+    },
+    "total_amount": {
+      "type": "number",
+      "description": "Monto total"
+    },
+    "installments": {
+      "type": "number",
+      "default": 1,
+      "description": "N\u00famero de cuotas"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "semanal",
+        "quincenal",
+        "mensual"
+      ],
+      "description": "Frecuencia de descuento"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de inicio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "en_proceso",
+        "completado"
+      ],
+      "default": "pendiente",
+      "description": "Estado"
+    },
+    "paid_installments": {
+      "type": "number",
+      "default": 0,
+      "description": "Cuotas ya pagadas"
+    }
+  },
+  "required": [
+    "type",
+    "worker_name",
+    "concept",
+    "total_amount",
+    "installments",
+    "frequency",
+    "start_date"
+  ]
+}
