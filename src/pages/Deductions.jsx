@@ -40,10 +40,16 @@ function DeductionForm({ open, onClose, onSubmit, editing, workers, type }) {
 
   useEffect(() => {
     if (open) {
-      setForm(editing || {
-        type, worker_name: "", worker_id: "", concept: "", total_amount: "",
-        installments: "1", frequency: "mensual", start_date: "", status: "pendiente", paid_installments: 0
-      });
+      if (editing) {
+        // If worker_id is missing but worker_name exists, try to find the matching worker by name
+        const workerById = editing.worker_id;
+        setForm({ ...editing, worker_id: workerById || "" });
+      } else {
+        setForm({
+          type, worker_name: "", worker_id: "", concept: "", total_amount: "",
+          installments: "1", frequency: "mensual", start_date: "", status: "pendiente", paid_installments: 0
+        });
+      }
     }
   }, [open, editing, type]);
 
@@ -71,7 +77,9 @@ function DeductionForm({ open, onClose, onSubmit, editing, workers, type }) {
             <Label>Trabajador</Label>
             {workers.length > 0 ? (
               <Select value={form.worker_id} onValueChange={handleWorker}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar trabajador" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder={form.worker_name || "Seleccionar trabajador"} />
+                </SelectTrigger>
                 <SelectContent>
                   {workers.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
                 </SelectContent>
