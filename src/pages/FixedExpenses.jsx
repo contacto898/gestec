@@ -258,7 +258,10 @@ export default function FixedExpenses() {
       qc.invalidateQueries({ queryKey: ["expenses"] });
     }
   });
-  const createExpense = useMutation({ mutationFn: (d) => base44.entities.Expense.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }) });
+  const createExpense = useMutation({
+    mutationFn: (d) => base44.entities.Expense.create(d),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" }),
+  });
 
   const handleSubmit = (data) => {
     editing ? updateMut.mutate({ id: editing.id, data }) : createMut.mutate(data);

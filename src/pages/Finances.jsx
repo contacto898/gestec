@@ -53,12 +53,14 @@ export default function Finances() {
     queryKey: ["incomes"],
     queryFn: () => base44.entities.Income.list("-date"),
     staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["expenses"],
     queryFn: () => base44.entities.Expense.list("-date"),
     staleTime: 0,
+    gcTime: 0,
   });
 
   const { data: workers = [] } = useQuery({

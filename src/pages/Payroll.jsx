@@ -32,8 +32,8 @@ export default function Payroll() {
   const createExpense = useMutation({
     mutationFn: (d) => base44.entities.Expense.create(d),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["expenses"] });
-      qc.invalidateQueries({ queryKey: ["incomes"] });
+      qc.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
+      qc.invalidateQueries({ queryKey: ["incomes"], refetchType: "all" });
     },
   });
   const updateDeduction = useMutation({ mutationFn: ({ id, data }) => base44.entities.Deduction.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["deductions"] }) });
