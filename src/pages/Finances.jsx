@@ -85,13 +85,21 @@ export default function Finances() {
     queryFn: () => base44.entities.FixedExpense.list(),
   });
 
-  // Real-time subscriptions so any external write immediately refreshes the lists
+  // Real-time subscriptions: refresh data and jump to the month of the new record
   useEffect(() => {
-    const unsubExpense = base44.entities.Expense.subscribe(() => {
+    const unsubExpense = base44.entities.Expense.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      if (event.type === "create" && event.data?.date) {
+        const month = event.data.date.substring(0, 7);
+        setSelectedMonth(month);
+      }
     });
-    const unsubIncome = base44.entities.Income.subscribe(() => {
+    const unsubIncome = base44.entities.Income.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
+      if (event.type === "create" && event.data?.date) {
+        const month = event.data.date.substring(0, 7);
+        setSelectedMonth(month);
+      }
     });
     return () => { unsubExpense(); unsubIncome(); };
   }, [queryClient]);
