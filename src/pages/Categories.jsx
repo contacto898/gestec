@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,13 @@ function formatCurrency(n) {
 const COLORS = ["#4f86f7", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#f97316", "#06b6d4", "#ec4899"];
 
 function CategoryForm({ open, onClose, onSubmit, editing }) {
-  const [form, setForm] = useState(editing || { name: "", type: "ingreso", description: "", color: COLORS[0] });
+  const [form, setForm] = useState({ name: "", type: "ingreso", description: "", color: COLORS[0] });
+
+  useEffect(() => {
+    if (open) {
+      setForm(editing || { name: "", type: "ingreso", description: "", color: COLORS[0] });
+    }
+  }, [open, editing]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
