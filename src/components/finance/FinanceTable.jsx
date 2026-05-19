@@ -16,6 +16,12 @@ function formatCurrency(n) {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
+function parseLocalDate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export default function FinanceTable({ items, type, onEdit, onDelete }) {
   const total = items.reduce((sum, i) => sum + (i.amount || 0), 0);
   const isIncome = type === "income";
@@ -42,7 +48,7 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
                   {isIncome ? "+" : "-"}{formatCurrency(item.amount)}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {item.date ? format(new Date(item.date + "T12:00:00"), "dd MMM yyyy", { locale: es }) : "—"}
+                  {item.date ? format(parseLocalDate(item.date), "dd MMM yyyy", { locale: es }) : "—"}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="font-normal">

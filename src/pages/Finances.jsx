@@ -10,6 +10,12 @@ import FinanceTable from "@/components/finance/FinanceTable";
 import MonthlySummary from "@/components/finance/MonthlySummary";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+function parseLocalDate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 import { removePaidToday } from "@/lib/paidToday";
 
 // Detect type of auto-generated record from description
@@ -307,7 +313,7 @@ export default function Finances() {
             <SelectItem value="all">Todos los meses</SelectItem>
             {allMonths.map((m) => (
               <SelectItem key={m} value={m}>
-                {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+                {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
               </SelectItem>
             ))}
           </SelectContent>
