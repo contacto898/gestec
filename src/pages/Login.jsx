@@ -4,11 +4,17 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { LogIn, IdCard, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
+// If the input is exactly 8 digits, treat it as DNI and convert to internal email
+function resolveLogin(input) {
+  if (/^\d{8}$/.test(input.trim())) return `${input.trim()}@usuario.interno`;
+  return input.trim();
+}
+
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,11 +23,12 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const email = resolveLogin(identifier);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
-      setError("Correo o contraseña incorrectos");
+      setError("DNI/correo o contraseña incorrectos");
     } finally {
       setLoading(false);
     }
@@ -31,7 +38,7 @@ export default function Login() {
     <AuthLayout
       icon={LogIn}
       title="Iniciar Sesión"
-      subtitle="Ingresa con tu usuario y contraseña"
+      subtitle="Ingresa con tu DNI o correo y contraseña"
       footer={
         <>
           ¿Olvidaste tu contraseña?{" "}
@@ -49,14 +56,15 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Correo electrónico</Label>
+          <Label htmlFor="identifier">DNI o Correo electrónico</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input id="email" type="email" autoComplete="email" autoFocus
-              placeholder="correo@ejemplo.com" value={email}
-              onChange={(e) => setEmail(e.target.value)}
+            <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input id="identifier" type="text" autoComplete="username" autoFocus
+              placeholder="12345678 o correo@ejemplo.com" value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               className="pl-10 h-12" required />
           </div>
+          <p className="text-xs text-muted-foreground">Usuarios creados con DNI: ingresa solo los 8 dígitos</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Contraseña</Label>
@@ -72,9 +80,6 @@ export default function Login() {
           {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Ingresando...</> : "Ingresar"}
         </Button>
       </form>
-      <p className="text-xs text-center text-muted-foreground mt-4">
-        El correo solo se usa para recuperar la contraseña.
-      </p>
     </AuthLayout>
   );
 }

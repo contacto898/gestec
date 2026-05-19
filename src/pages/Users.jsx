@@ -91,19 +91,26 @@ function RoleForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-// ── Create User Dialog (admin creates user + password) ────────────────────────
+// ── Create User Dialog (admin creates user with DNI as username) ───────────────
+// The system uses DNI@internal.local as the email to satisfy the auth email requirement
 function CreateUserDialog({ open, onClose }) {
-  const [form, setForm] = useState({ email: "", password: "", confirmPassword: "", appRole: "user" });
+  const [form, setForm] = useState({ dni: "", fullName: "", password: "", confirmPassword: "", appRole: "user" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    if (open) { setForm({ email: "", password: "", confirmPassword: "", appRole: "user" }); setMsg(null); }
+    if (open) { setForm({ dni: "", fullName: "", password: "", confirmPassword: "", appRole: "user" }); setMsg(null); }
   }, [open]);
 
+  const dniToEmail = (dni) => `${dni.trim()}@usuario.interno`;
+
   const handleCreate = async () => {
-    if (!form.email.trim() || !form.password.trim()) return;
+    if (!form.dni.trim() || !form.password.trim()) return;
+    if (!/^\d{8}$/.test(form.dni.trim())) {
+      setMsg({ type: "error", text: "El DNI debe tener exactamente 8 dígitos" });
+      return;
+    }
     if (form.password !== form.confirmPassword) {
       setMsg({ type: "error", text: "Las contraseñas no coinciden" });
       return;
@@ -114,14 +121,14 @@ function CreateUserDialog({ open, onClose }) {
     }
     setLoading(true);
     setMsg(null);
+    const email = dniToEmail(form.dni);
     try {
-      await base44.auth.register({ email: form.email.trim(), password: form.password });
-      setMsg({ type: "success", text: `Usuario ${form.email} creado. Debe verificar su correo para activar la cuenta.` });
+      await base44.auth.register({ email, password: form.password, full_name: form.fullName.trim() || form.dni.trim() });
+      setMsg({ type: "success", text: `Usuario con DNI ${form.dni} creado exitosamente. Debe verificar para activar la cuenta.` });
     } catch (e) {
-      // Try invite as fallback
       try {
-        await base44.users.inviteUser(form.email.trim(), form.appRole);
-        setMsg({ type: "success", text: `Se envió invitación a ${form.email}. El usuario recibirá un email para activar su cuenta.` });
+        await base44.users.inviteUser(email, form.appRole);
+        setMsg({ type: "success", text: `Invitación enviada para DNI ${form.dni}.` });
       } catch (e2) {
         setMsg({ type: "error", text: e2.message || "Error al crear usuario" });
       }
@@ -140,9 +147,15 @@ function CreateUserDialog({ open, onClose }) {
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="space-y-2">
-            <Label>Correo electrónico</Label>
-            <Input type="email" placeholder="usuario@ejemplo.com" value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Label>DNI (usuario de acceso)</Label>
+            <Input type="text" placeholder="Ej: 12345678" maxLength={8} value={form.dni}
+              onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, "") })} />
+            <p className="text-xs text-muted-foreground">El DNI será el nombre de usuario para ingresar al sistema</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Nombre completo</Label>
+            <Input type="text" placeholder="Nombre del trabajador" value={form.fullName}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Contraseña inicial</Label>
@@ -177,7 +190,7 @@ function CreateUserDialog({ open, onClose }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={handleCreate} disabled={loading || !form.email.trim() || !form.password.trim()} className="gap-2">
+            <Button onClick={handleCreate} disabled={loading || !form.dni.trim() || !form.password.trim()} className="gap-2">
               <UserPlus className="w-4 h-4" /> {loading ? "Creando..." : "Crear Usuario"}
             </Button>
           </div>
@@ -345,7 +358,11 @@ export default function UsersPage() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">{u.full_name || "Sin nombre"}</p>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {u.email?.endsWith("@usuario.interno")
+                            ? `DNI: ${u.email.replace("@usuario.interno", "")}`
+                            : u.email}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">

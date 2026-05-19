@@ -3,10 +3,18 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { format } from "date-fns";
 import PayrollForm from "@/components/payroll/PayrollForm";
 import PayrollTable from "@/components/payroll/PayrollTable";
 import { getPaidToday, addPaidToday } from "@/lib/paidToday";
+
+// Returns today's date in yyyy-MM-dd using local timezone (avoids UTC offset issues)
+function getTodayLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export default function Payroll() {
   const [formOpen, setFormOpen] = useState(false);
@@ -20,7 +28,13 @@ export default function Payroll() {
   const createWorker = useMutation({ mutationFn: (d) => base44.entities.Worker.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
   const updateWorker = useMutation({ mutationFn: ({ id, data }) => base44.entities.Worker.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
   const deleteWorker = useMutation({ mutationFn: (id) => base44.entities.Worker.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
-  const createExpense = useMutation({ mutationFn: (d) => base44.entities.Expense.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }) });
+  const createExpense = useMutation({
+    mutationFn: (d) => base44.entities.Expense.create(d),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["incomes"] });
+    },
+  });
   const updateDeduction = useMutation({ mutationFn: ({ id, data }) => base44.entities.Deduction.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["deductions"] }) });
 
   const handleSubmit = (data) => {
@@ -29,7 +43,7 @@ export default function Payroll() {
   };
 
   const handlePay = async (worker, activeDeductions, netAmount) => {
-    const today = format(new Date(), "yyyy-MM-dd");
+    const today = getTodayLocal();
     await createExpense.mutateAsync({
       description: `Pago planilla (${worker.payment_type}) — ${worker.name}`,
       amount: netAmount,
@@ -45,23 +59,27 @@ export default function Payroll() {
     setPaidToday(getPaidToday("planilla"));
   };
 
-  const handleVacation = async (worker, option, paidAmount, daysOff, vacStartDate) => {
-    const today = format(new Date(), "yyyy-MM-dd");
+  const handleVacation = async (worker, option, paidAmount, days, vacStartDate, daysAccumulated) => {
+    const today = getTodayLocal();
     const dateRef = vacStartDate || today;
     if (paidAmount > 0) {
+      const descMap = {
+        pago: "pago completo",
+        mixto: `${days} días libres desde ${dateRef} + pago parcial`,
+        vacaciones: "solo días libres",
+      };
       await createExpense.mutateAsync({
-        description: `Vacaciones — ${worker.name} (${
-          option === "pago" ? "pago completo" :
-          option === "mixto" ? `${daysOff} días libres desde ${dateRef} + pago parcial` :
-          "solo días libres"
-        })`,
+        description: `Vacaciones — ${worker.name} (${descMap[option] || option})`,
         amount: paidAmount,
         date: today,
         category: "planilla",
       });
     }
-    // Mark vacation date on worker (use vacStartDate if available)
-    updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: dateRef } });
+    // For "acumular" with days to take now, note it. For pure accumulate (0 days), don't advance vacation_paid_date.
+    const shouldMarkDate = option !== "acumular" || days > 0;
+    if (shouldMarkDate) {
+      updateWorker.mutate({ id: worker.id, data: { ...worker, vacation_paid_date: dateRef } });
+    }
     addPaidToday("planilla", worker.id);
     setPaidToday(getPaidToday("planilla"));
   };

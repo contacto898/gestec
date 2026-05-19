@@ -44,12 +44,25 @@ function getVacationStatus(worker) {
   return { years, vacationAmount };
 }
 
+// Returns today in yyyy-MM-dd local time
+function getTodayLocal() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 // ── Vacation Dialog ──────────────────────────────────────────────────────────
 function VacationDialog({ open, onClose, worker, onConfirm }) {
   const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto" | "acumular"
   const [daysOff, setDaysOff] = useState(7);
-  const [vacStartDate, setVacStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [vacStartDate, setVacStartDate] = useState(getTodayLocal());
+  // For "acumular": how many days to take now vs accumulate
+  const [daysToTakeNow, setDaysToTakeNow] = useState(0);
   const vacAmount = worker?.salary / 2 || 0;
+  const totalVacDays = 15;
+
+  // For "acumular": days taken now generate proportional pay reduction
+  const accumulatePaidAmount = daysToTakeNow > 0 ? 0 : 0; // No pay in accumulate mode
+  const daysAccumulated = totalVacDays - daysToTakeNow;
 
   const paidAmount = option === "vacaciones" ? 0
     : option === "mixto" ? vacAmount * (1 - daysOff / 15)
@@ -65,7 +78,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
         <div className="space-y-4 mt-2">
           <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 text-sm">
             <p className="font-semibold text-amber-800">¡Año cumplido!</p>
-            <p className="text-amber-700 mt-0.5">Vacaciones = medio mes = {formatCurrency(vacAmount)}</p>
+            <p className="text-amber-700 mt-0.5">Vacaciones = medio mes = {formatCurrency(vacAmount)} ({totalVacDays} días)</p>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium">¿Cómo tomará las vacaciones?</p>
@@ -74,7 +87,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
                 { value: "pago", label: "Se paga el medio mes completo", desc: "No toma días libres" },
                 { value: "vacaciones", label: "Toma vacaciones completas (15 días)", desc: "Días libres, sin pago extra" },
                 { value: "mixto", label: "Vacaciones parciales + pago", desc: "Parte días libres, parte pagada" },
-                { value: "acumular", label: "Acumular para el próximo año", desc: "No toma ni cobra ahora, se guarda" },
+                { value: "acumular", label: "Acumular para el próximo año", desc: "Elige cuántos días tomar ahora y cuántos guardar" },
               ].map((opt) => (
                 <label key={opt.value} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${option === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}>
                   <input type="radio" className="mt-0.5" value={opt.value} checked={option === opt.value} onChange={() => setOption(opt.value)} />
@@ -87,8 +100,8 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
             </div>
           </div>
 
-          {/* Fecha de inicio de vacaciones (para opciones que implican días libres) */}
-          {(option === "vacaciones" || option === "mixto") && (
+          {/* Fecha de inicio (para opciones con días libres) */}
+          {(option === "vacaciones" || option === "mixto" || (option === "acumular" && daysToTakeNow > 0)) && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Fecha de inicio de vacaciones</label>
               <input type="date" value={vacStartDate} onChange={(e) => setVacStartDate(e.target.value)}
@@ -108,8 +121,27 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
           )}
 
           {option === "acumular" && (
-            <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
-              Las vacaciones quedan registradas como tomadas (se marca la fecha) pero no se genera pago ni días libres. Se acumulan para el próximo ciclo.
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Días a tomar ahora (de {totalVacDays})</label>
+                <input type="range" min={0} max={totalVacDays} value={daysToTakeNow}
+                  onChange={(e) => setDaysToTakeNow(+e.target.value)} className="w-full" />
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded-lg bg-orange-50 border border-orange-100 text-center">
+                    <p className="text-orange-600 font-semibold">{daysToTakeNow} días</p>
+                    <p className="text-orange-500">Toma ahora</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-blue-50 border border-blue-100 text-center">
+                    <p className="text-blue-600 font-semibold">{daysAccumulated} días</p>
+                    <p className="text-blue-500">Se acumulan</p>
+                  </div>
+                </div>
+              </div>
+              {daysAccumulated > 0 && (
+                <div className="p-3 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-700">
+                  {daysAccumulated} días se acumularán para el próximo ciclo. No generan pago ahora.
+                </div>
+              )}
             </div>
           )}
 
@@ -121,8 +153,10 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={() => { onConfirm(worker, option, paidAmount, daysOff, vacStartDate); onClose(); }}
-              className="bg-amber-500 hover:bg-amber-600 gap-2">
+            <Button onClick={() => {
+              onConfirm(worker, option, paidAmount, option === "mixto" ? daysOff : daysToTakeNow, vacStartDate, daysAccumulated);
+              onClose();
+            }} className="bg-amber-500 hover:bg-amber-600 gap-2">
               <Palmtree className="w-4 h-4" /> Confirmar
             </Button>
           </div>
