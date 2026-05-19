@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, IdCard, Lock, Loader2 } from "lucide-react";
+import { LogIn, IdCard, Lock, Loader2, Info } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
 // If the input is exactly 8 digits, treat it as DNI and convert to internal email
@@ -14,6 +14,8 @@ function resolveLogin(input) {
 }
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const isInvited = searchParams.get("invited") === "true";
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -48,6 +50,16 @@ export default function Login() {
         </>
       }
     >
+      {isInvited && (
+        <div className="mb-4 p-3 rounded-lg bg-blue-50 text-blue-700 text-sm flex gap-2">
+          <Info className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            <strong>¿Primera vez?</strong> Primero debes crear tu contraseña. Haz clic en{" "}
+            <Link to="/forgot-password" className="underline font-medium">Recuperar acceso</Link>,
+            ingresa tu correo y recibirás un enlace para establecerla.
+          </span>
+        </div>
+      )}
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
