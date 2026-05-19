@@ -85,20 +85,32 @@ export default function Finances() {
     queryFn: () => base44.entities.FixedExpense.list(),
   });
 
-  // Real-time subscriptions: refresh data and jump to the month of the new record
+  // Force refetch every time the user returns to this page (tab focus or navigation)
+  useEffect(() => {
+    const refetchAll = () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["incomes"], refetchType: "all" });
+    };
+    // Refetch immediately on mount
+    refetchAll();
+    // Also refetch when the browser tab becomes visible again
+    const onVisible = () => { if (document.visibilityState === "visible") refetchAll(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [queryClient]);
+
+  // Real-time subscriptions: jump to the month of the new record when on the page
   useEffect(() => {
     const unsubExpense = base44.entities.Expense.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       if (event.type === "create" && event.data?.date) {
-        const month = event.data.date.substring(0, 7);
-        setSelectedMonth(month);
+        setSelectedMonth(event.data.date.substring(0, 7));
       }
     });
     const unsubIncome = base44.entities.Income.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
       if (event.type === "create" && event.data?.date) {
-        const month = event.data.date.substring(0, 7);
-        setSelectedMonth(month);
+        setSelectedMonth(event.data.date.substring(0, 7));
       }
     });
     return () => { unsubExpense(); unsubIncome(); };
