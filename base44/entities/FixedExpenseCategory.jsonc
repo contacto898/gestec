@@ -1,0 +1,17 @@
+{
+  "name": "FixedExpenseCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre de la categor\u00eda"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

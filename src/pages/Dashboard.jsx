@@ -108,6 +108,16 @@ export default function Dashboard() {
                 {formatCurrency(balanceTotal)}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Acumulado histórico</p>
+              <div className="mt-3 pt-3 border-t border-primary/20 grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Ingresos</p>
+                  <p className="font-bold text-emerald-600 text-sm">{formatCurrency(totalAllIncome)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Gastos</p>
+                  <p className="font-bold text-red-500 text-sm">{formatCurrency(totalAllExpense)}</p>
+                </div>
+              </div>
             </div>
             <div className="space-y-2 pt-1">
               <div className="flex justify-between items-center p-3 rounded-xl bg-emerald-50">

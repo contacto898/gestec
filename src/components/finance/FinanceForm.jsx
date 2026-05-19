@@ -4,28 +4,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
-const INCOME_CATEGORIES = [
-  { value: "ventas", label: "Ventas" },
-  { value: "servicios", label: "Servicios" },
-  { value: "inversiones", label: "Inversiones" },
-  { value: "prestamos", label: "Préstamos" },
-  { value: "otros", label: "Otros" },
-];
-
-const EXPENSE_CATEGORIES = [
-  { value: "planilla", label: "Planilla" },
-  { value: "alquiler", label: "Alquiler" },
-  { value: "servicios", label: "Servicios" },
-  { value: "materiales", label: "Materiales" },
-  { value: "transporte", label: "Transporte" },
-  { value: "impuestos", label: "Impuestos" },
-  { value: "otros", label: "Otros" },
-];
+// Fallback categories if none created
+const FALLBACK_INCOME = [{ name: "Ventas" }, { name: "Servicios" }, { name: "Inversiones" }, { name: "Préstamos" }, { name: "Otros" }];
+const FALLBACK_EXPENSE = [{ name: "Planilla" }, { name: "Alquiler" }, { name: "Servicios" }, { name: "Materiales" }, { name: "Transporte" }, { name: "Impuestos" }, { name: "Otros" }];
 
 export default function FinanceForm({ open, onClose, onSubmit, type, editing }) {
-  const [form, setForm] = useState(editing || { description: "", amount: "", date: "", category: type === "income" ? "ventas" : "planilla" });
-  const categories = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const [form, setForm] = useState(editing || { description: "", amount: "", date: "", category: "" });
+
+  const { data: allCategories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => base44.entities.Category.list(),
+  });
+
+  const filteredCats = allCategories.filter((c) => c.type === (type === "income" ? "ingreso" : "gasto"));
+  const categories = filteredCats.length > 0
+    ? filteredCats.map((c) => ({ value: c.name, label: c.name }))
+    : (type === "income" ? FALLBACK_INCOME : FALLBACK_EXPENSE).map((c) => ({ value: c.name, label: c.name }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -44,40 +41,25 @@ export default function FinanceForm({ open, onClose, onSubmit, type, editing }) 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
             <Label>Descripción</Label>
-            <Input
-              placeholder="Ej: Pago de cliente"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              required
-            />
+            <Input placeholder="Ej: Pago de cliente" value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })} required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Monto</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                required
-              />
+              <Input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
             </div>
             <div className="space-y-2">
               <Label>Fecha</Label>
-              <Input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                required
-              />
+              <Input type="date" value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })} required />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Categoría</Label>
             <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Selecciona categoría" /></SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
                   <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>

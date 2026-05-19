@@ -1,0 +1,36 @@
+{
+  "name": "FixedExpensePayment",
+  "type": "object",
+  "properties": {
+    "fixed_expense_id": {
+      "type": "string",
+      "description": "ID del gasto fijo"
+    },
+    "fixed_expense_description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del gasto fijo"
+    },
+    "scheduled_amount": {
+      "type": "number",
+      "description": "Monto programado"
+    },
+    "paid_amount": {
+      "type": "number",
+      "description": "Monto pagado (puede ser menor)"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de pago"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas"
+    }
+  },
+  "required": [
+    "fixed_expense_id",
+    "paid_amount",
+    "payment_date"
+  ]
+}
