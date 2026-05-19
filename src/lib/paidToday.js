@@ -22,3 +22,8 @@ export function addPaidToday(prefix, id) {
     localStorage.setItem(getKey(prefix), JSON.stringify([...current, id]));
   }
 }
+
+export function removePaidToday(prefix, id) {
+  const current = getPaidToday(prefix);
+  localStorage.setItem(getKey(prefix), JSON.stringify(current.filter((i) => i !== id)));
+}

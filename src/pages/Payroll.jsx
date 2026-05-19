@@ -48,7 +48,7 @@ export default function Payroll() {
       description: `Pago planilla (${worker.payment_type}) — ${worker.name}`,
       amount: netAmount,
       date: today,
-      category: "Planilla",
+      category: "planilla",
     });
     for (const d of activeDeductions) {
       const newPaid = (d.paid_installments || 0) + 1;

@@ -42,7 +42,7 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
                   {isIncome ? "+" : "-"}{formatCurrency(item.amount)}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {item.date ? format(new Date(item.date), "dd MMM yyyy", { locale: es }) : "—"}
+                  {item.date ? format(new Date(item.date + "T12:00:00"), "dd MMM yyyy", { locale: es }) : "—"}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="font-normal">
