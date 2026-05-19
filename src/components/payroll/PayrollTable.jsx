@@ -28,14 +28,14 @@ function getInstallmentAmount(deduction) {
 // Check if worker has completed 1+ year and hasn't received vacation for current year
 function getVacationStatus(worker) {
   if (!worker.hire_date) return null;
-  const hire = new Date(worker.hire_date);
+  const hire = new Date(worker.hire_date + "T12:00:00");
   const now = new Date();
   const years = differenceInYears(now, hire);
   if (years < 1) return null;
 
   // Check months since last vacation payment
   if (worker.vacation_paid_date) {
-    const lastVacPaid = new Date(worker.vacation_paid_date);
+    const lastVacPaid = new Date(worker.vacation_paid_date + "T12:00:00");
     const monthsSince = differenceInMonths(now, lastVacPaid);
     if (monthsSince < 11) return null; // Not due yet
   }
@@ -289,7 +289,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                       <Badge variant="secondary" className="font-normal">{paymentTypeLabels[w.payment_type] || w.payment_type}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {w.hire_date ? format(new Date(w.hire_date), "dd MMM yyyy", { locale: es }) : "—"}
+                      {w.hire_date ? format(new Date(w.hire_date + "T12:00:00"), "dd MMM yyyy", { locale: es }) : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge className={w.status === "activo" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-red-100 text-red-700 hover:bg-red-100"}>

@@ -1,7 +1,11 @@
 // Persistent "paid today" tracking using localStorage keyed by date
 // so it resets automatically the next day
 
-const getKey = (prefix) => `paidToday_${prefix}_${new Date().toISOString().split("T")[0]}`;
+function getTodayLocalKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+const getKey = (prefix) => `paidToday_${prefix}_${getTodayLocalKey()}`;
 
 export function getPaidToday(prefix) {
   try {
