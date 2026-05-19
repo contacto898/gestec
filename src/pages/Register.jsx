@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2, IdCard } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Register() {
+  const { toast } = useToast();
   const [dni, setDni] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
