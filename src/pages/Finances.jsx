@@ -54,6 +54,7 @@ export default function Finances() {
     queryFn: () => base44.entities.Income.list("-date"),
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: expenses = [] } = useQuery({
@@ -61,6 +62,7 @@ export default function Finances() {
     queryFn: () => base44.entities.Expense.list("-date"),
     staleTime: 0,
     gcTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: workers = [] } = useQuery({
