@@ -192,14 +192,14 @@ function DeductionCard({ item, onEdit, onDelete }) {
             </div>
           </div>
         </div>
-        <div className="text-right shrink-0">
-          <p className={`text-lg font-bold ${isDescuento ? "text-red-600" : "text-amber-600"}`}>
+        <div className="flex flex-col items-end shrink-0 min-w-0">
+          <p className={`text-base font-bold ${isDescuento ? "text-red-600" : "text-amber-600"}`}>
             {formatCurrency(item.total_amount)}
           </p>
           <p className="text-xs text-muted-foreground">Total</p>
-          <div className="flex gap-1 mt-2 justify-end">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(item)}><Pencil className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(item.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+          <div className="flex gap-1 mt-1 justify-end">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Pencil className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
           </div>
         </div>
       </div>

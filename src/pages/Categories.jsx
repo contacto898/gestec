@@ -99,13 +99,13 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete }) {
               </Badge>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-right mr-2">
-              <p className="text-xs text-muted-foreground">{items.length} registros</p>
-              <p className="font-bold text-lg" style={{ color: category.color }}>{formatCurrency(total)}</p>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <p className="text-xs text-muted-foreground">{items.length} registros</p>
+            <p className="font-bold text-lg leading-tight" style={{ color: category.color }}>{formatCurrency(total)}</p>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(category)}><Pencil className="w-4 h-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(category.id)}><Trash2 className="w-4 h-4" /></Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onEdit(category)}><Pencil className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(category.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
           </div>
         </div>
         {items.length > 0 && (

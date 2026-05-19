@@ -52,23 +52,21 @@ export default function MonthlySummary({ incomes, expenses }) {
           const monthLabel = format(new Date(+r.month.split("-")[0], +r.month.split("-")[1] - 1, 1), "MMMM yyyy", { locale: es });
           return (
             <div key={r.month} className="px-6 py-4 hover:bg-muted/20 transition-colors">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-wrap items-center justify-between gap-1 mb-2">
                 <span className="font-semibold capitalize">{monthLabel}</span>
                 <span className={`text-sm font-bold ${r.accumulated >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                   Acumulado: {formatCurrency(r.accumulated)}
                 </span>
               </div>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 <div className="flex items-center gap-1.5 text-emerald-600">
-                  <TrendingUp className="w-3.5 h-3.5" />
+                  <TrendingUp className="w-3.5 h-3.5 shrink-0" />
                   <span>{formatCurrency(r.income)}</span>
                 </div>
-                <ArrowRight className="w-3 h-3 text-muted-foreground" />
                 <div className="flex items-center gap-1.5 text-red-500">
-                  <TrendingDown className="w-3.5 h-3.5" />
+                  <TrendingDown className="w-3.5 h-3.5 shrink-0" />
                   <span>{formatCurrency(r.expense)}</span>
                 </div>
-                <ArrowRight className="w-3 h-3 text-muted-foreground" />
                 <span className={`font-semibold ${r.net >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                   Neto: {formatCurrency(r.net)}
                 </span>

@@ -351,21 +351,21 @@ export default function UsersPage() {
             ) : (
               <div className="divide-y">
                 {users.map((u) => (
-                  <div key={u.id} className="p-4 flex items-center justify-between gap-3 hover:bg-muted/20">
-                    <div className="flex items-center gap-3">
+                  <div key={u.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-muted/20">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
                         {(u.full_name || u.email || "?")[0].toUpperCase()}
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{u.full_name || "Sin nombre"}</p>
-                        <p className="text-xs text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{u.full_name || "Sin nombre"}</p>
+                        <p className="text-xs text-muted-foreground truncate">
                           {u.email?.endsWith("@usuario.interno")
                             ? `DNI: ${u.email.replace("@usuario.interno", "")}`
                             : u.email}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
                       <Badge className={u.role === "admin" ? "bg-primary/10 text-primary" : "bg-secondary text-secondary-foreground"}>
                         {u.role === "admin" ? "Administrador" : "Usuario"}
                       </Badge>
