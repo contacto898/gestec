@@ -91,47 +91,25 @@ function RoleForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-// ── Create User Dialog (admin creates user with DNI as username) ───────────────
-// The system uses DNI@internal.local as the email to satisfy the auth email requirement
+// ── Create User Dialog ────────────────────────────────────────────────────────
 function CreateUserDialog({ open, onClose }) {
-  const [form, setForm] = useState({ dni: "", fullName: "", password: "", confirmPassword: "", appRole: "user" });
-  const [showPass, setShowPass] = useState(false);
+  const [form, setForm] = useState({ email: "", appRole: "user" });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
   useEffect(() => {
-    if (open) { setForm({ dni: "", fullName: "", password: "", confirmPassword: "", appRole: "user" }); setMsg(null); }
+    if (open) { setForm({ email: "", appRole: "user" }); setMsg(null); }
   }, [open]);
 
-  const dniToEmail = (dni) => `${dni.trim()}@usuario.interno`;
-
   const handleCreate = async () => {
-    if (!form.dni.trim() || !form.password.trim()) return;
-    if (!/^\d{8}$/.test(form.dni.trim())) {
-      setMsg({ type: "error", text: "El DNI debe tener exactamente 8 dígitos" });
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setMsg({ type: "error", text: "Las contraseñas no coinciden" });
-      return;
-    }
-    if (form.password.length < 6) {
-      setMsg({ type: "error", text: "La contraseña debe tener al menos 6 caracteres" });
-      return;
-    }
+    if (!form.email.trim()) return;
     setLoading(true);
     setMsg(null);
-    const email = dniToEmail(form.dni);
     try {
-      await base44.auth.register({ email, password: form.password, full_name: form.fullName.trim() || form.dni.trim() });
-      setMsg({ type: "success", text: `Usuario con DNI ${form.dni} creado exitosamente. Debe verificar para activar la cuenta.` });
+      await base44.users.inviteUser(form.email.trim(), form.appRole);
+      setMsg({ type: "success", text: `Invitación enviada a ${form.email}. El usuario ya puede ingresar al sistema.` });
     } catch (e) {
-      try {
-        await base44.users.inviteUser(email, form.appRole);
-        setMsg({ type: "success", text: `Invitación enviada para DNI ${form.dni}.` });
-      } catch (e2) {
-        setMsg({ type: "error", text: e2.message || "Error al crear usuario" });
-      }
+      setMsg({ type: "error", text: e.message || "Error al crear usuario" });
     } finally {
       setLoading(false);
     }
@@ -146,32 +124,13 @@ function CreateUserDialog({ open, onClose }) {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
+          <p className="text-sm text-muted-foreground">
+            El usuario recibirá un correo para activar su cuenta y establecer su contraseña.
+          </p>
           <div className="space-y-2">
-            <Label>DNI (usuario de acceso)</Label>
-            <Input type="text" placeholder="Ej: 12345678" maxLength={8} value={form.dni}
-              onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, "") })} />
-            <p className="text-xs text-muted-foreground">El DNI será el nombre de usuario para ingresar al sistema</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Nombre completo</Label>
-            <Input type="text" placeholder="Nombre del trabajador" value={form.fullName}
-              onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Contraseña inicial</Label>
-            <div className="relative">
-              <Input type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres"
-                value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              <button onClick={() => setShowPass(!showPass)} type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Confirmar contraseña</Label>
-            <Input type={showPass ? "text" : "password"} placeholder="Repite la contraseña"
-              value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} />
+            <Label>Correo electrónico</Label>
+            <Input type="email" placeholder="correo@ejemplo.com" value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div className="space-y-2">
             <Label>Nivel de acceso</Label>
@@ -190,8 +149,8 @@ function CreateUserDialog({ open, onClose }) {
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button onClick={handleCreate} disabled={loading || !form.dni.trim() || !form.password.trim()} className="gap-2">
-              <UserPlus className="w-4 h-4" /> {loading ? "Creando..." : "Crear Usuario"}
+            <Button onClick={handleCreate} disabled={loading || !form.email.trim()} className="gap-2">
+              <UserPlus className="w-4 h-4" /> {loading ? "Enviando..." : "Crear Usuario"}
             </Button>
           </div>
         </div>
