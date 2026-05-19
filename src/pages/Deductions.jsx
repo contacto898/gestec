@@ -17,6 +17,13 @@ function formatCurrency(n) {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
+// Parses a yyyy-MM-dd string as LOCAL date to avoid UTC offset shifting the day
+function parseLocalDate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 const freqLabels = { semanal: "Semanal", quincenal: "Quincenal", mensual: "Mensual" };
 const statusColors = {
   pendiente: "bg-yellow-100 text-yellow-700",
@@ -154,7 +161,7 @@ function DeductionCard({ item, onEdit, onDelete }) {
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Calendar className="w-3.5 h-3.5" />
               <span>
-                {item.start_date ? format(new Date(item.start_date), "dd MMM yyyy", { locale: es }) : "—"}
+                {item.start_date ? format(parseLocalDate(item.start_date), "dd MMM yyyy", { locale: es }) : "—"}
                 {" · "}{freqLabels[item.frequency]}
               </span>
             </div>
@@ -267,7 +274,7 @@ export default function Deductions() {
             <SelectItem value="all">Todos los meses</SelectItem>
             {allMonths.map((m) => (
               <SelectItem key={m} value={m}>
-                {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+                {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
               </SelectItem>
             ))}
           </SelectContent>

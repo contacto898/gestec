@@ -18,6 +18,13 @@ function formatCurrency(n) {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
+// Parses a yyyy-MM-dd string as LOCAL date to avoid UTC offset shifting the day
+function parseLocalDate(str) {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 const freqLabels = { mensual: "Mensual", bimestral: "Bimestral", trimestral: "Trimestral", semestral: "Semestral", anual: "Anual", unico: "Único" };
 const statusColors = { activo: "bg-emerald-100 text-emerald-700", pausado: "bg-yellow-100 text-yellow-700", cancelado: "bg-gray-100 text-gray-500" };
 
@@ -213,14 +220,14 @@ function FixedExpenseRow({ item, payments, onEdit, onDelete, onPay, paidToday = 
           <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {item.due_date ? format(new Date(item.due_date), "dd MMM yyyy", { locale: es }) : "—"}
+              {item.due_date ? format(parseLocalDate(item.due_date), "dd MMM yyyy", { locale: es }) : "—"}
             </span>
             <Badge variant="secondary" className="text-xs">{freqLabels[item.frequency]}</Badge>
             {item.category && <Badge variant="outline" className="text-xs">{item.category}</Badge>}
           </div>
           {lastPayment && (
             <p className="text-xs text-emerald-600">
-              Último pago: {formatCurrency(lastPayment.paid_amount)} el {format(new Date(lastPayment.payment_date), "dd MMM yyyy", { locale: es })}
+              Último pago: {formatCurrency(lastPayment.paid_amount)} el {format(parseLocalDate(lastPayment.payment_date), "dd MMM yyyy", { locale: es })}
             </p>
           )}
           {totalPaid > 0 && (
@@ -369,7 +376,7 @@ export default function FixedExpenses() {
               <SelectItem value="all">Todos los meses</SelectItem>
               {allMonths.map((m) => (
                 <SelectItem key={m} value={m}>
-                  {format(new Date(m + "-02"), "MMMM yyyy", { locale: es })}
+                  {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
                 </SelectItem>
               ))}
             </SelectContent>
