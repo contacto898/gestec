@@ -146,6 +146,15 @@ export default function Finances() {
       if (worker) {
         // Remove from paidToday so button resets
         removePaidToday("planilla", worker.id);
+        // Revert last paid installment for each active deduction of this worker
+        const workerDeds = deductions.filter((d) => d.worker_id === worker.id && (d.paid_installments || 0) > 0);
+        for (const ded of workerDeds) {
+          const newPaid = ded.paid_installments - 1;
+          updateDeduction.mutate({
+            id: ded.id,
+            data: { ...ded, paid_installments: newPaid, status: newPaid === 0 ? "pendiente" : "en_proceso" },
+          });
+        }
         queryClient.invalidateQueries({ queryKey: ["workers"] });
       }
     }
@@ -195,7 +204,7 @@ export default function Finances() {
     const autoType = getAutoType(item);
     if (autoType) {
       const revertMsg = autoType === "planilla"
-        ? "El estado de pago del trabajador será revertido (podrá volver a pagarse)."
+        ? "El estado de pago del trabajador será revertido (podrá volver a pagarse) y se revertirá la última cuota de sus descuentos/adelantos activos."
         : autoType === "vacaciones"
         ? "Las vacaciones del trabajador serán revertidas."
         : autoType === "deduccion"
