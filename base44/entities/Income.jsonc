@@ -1,0 +1,35 @@
+{
+  "name": "Income",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del ingreso"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monto del ingreso"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del ingreso"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "ventas",
+        "servicios",
+        "inversiones",
+        "prestamos",
+        "otros"
+      ],
+      "description": "Categor\u00eda del ingreso"
+    }
+  },
+  "required": [
+    "description",
+    "amount",
+    "date"
+  ]
+}

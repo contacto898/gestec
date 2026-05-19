@@ -1,0 +1,46 @@
+{
+  "name": "Worker",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del trabajador"
+    },
+    "position": {
+      "type": "string",
+      "description": "Cargo o puesto"
+    },
+    "salary": {
+      "type": "number",
+      "description": "Salario del trabajador"
+    },
+    "payment_type": {
+      "type": "string",
+      "enum": [
+        "mensual",
+        "quincenal",
+        "semanal"
+      ],
+      "description": "Tipo de pago"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de pago"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "activo",
+        "inactivo"
+      ],
+      "default": "activo",
+      "description": "Estado del trabajador"
+    }
+  },
+  "required": [
+    "name",
+    "salary",
+    "payment_type"
+  ]
+}

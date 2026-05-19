@@ -1,0 +1,37 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del gasto"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monto del gasto"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del gasto"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "planilla",
+        "alquiler",
+        "servicios",
+        "materiales",
+        "transporte",
+        "impuestos",
+        "otros"
+      ],
+      "description": "Categor\u00eda del gasto"
+    }
+  },
+  "required": [
+    "description",
+    "amount",
+    "date"
+  ]
+}
