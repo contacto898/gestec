@@ -27,10 +27,10 @@ export default function Sidebar({ open, onClose }) {
         <div className="flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">FP</span>
+              <span className="text-primary-foreground font-bold text-sm">YG</span>
             </div>
             <div>
-              <h1 className="font-bold text-base tracking-tight">FinPlanilla</h1>
+              <h1 className="font-bold text-base tracking-tight">YooGest</h1>
               <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Sistema</p>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="p-4 mx-3 mb-4 rounded-xl bg-sidebar-accent/50">
-          <p className="text-xs text-sidebar-foreground/50">© 2026 FinPlanilla</p>
+          <p className="text-xs text-sidebar-foreground/50">© 2026 YooGest</p>
         </div>
       </aside>
     </>
