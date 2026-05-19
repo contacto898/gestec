@@ -61,9 +61,17 @@ function CategoryManager({ open, onClose }) {
 }
 
 // ── Pay Dialog ───────────────────────────────────────────────────────────────
+function getTodayLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function PayDialog({ open, onClose, item, onConfirmPay }) {
   const [paidAmount, setPaidAmount] = useState(item?.amount || "");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(getTodayLocal());
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -269,14 +277,14 @@ export default function FixedExpenses() {
   };
 
   const handleConfirmPay = async (item, paidAmount, date) => {
-    createPayment.mutate({
+    await createPayment.mutateAsync({
       fixed_expense_id: item.id,
       fixed_expense_description: item.description,
       scheduled_amount: item.amount,
       paid_amount: paidAmount,
       payment_date: date,
     });
-    createExpense.mutate({
+    await createExpense.mutateAsync({
       description: `Gasto fijo — ${item.description} (${item.company})`,
       amount: paidAmount,
       date: date,
