@@ -159,8 +159,8 @@ function DeductionCard({ item, onEdit, onDelete }) {
   const isDescuento = item.type === "descuento";
 
   return (
-    <Card className="p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-4">
+    <Card className="p-4 hover:shadow-md transition-shadow overflow-hidden">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isDescuento ? "bg-red-100" : "bg-amber-100"}`}>
             {isDescuento ? <Minus className="w-5 h-5 text-red-600" /> : <CreditCard className="w-5 h-5 text-amber-600" />}
@@ -187,7 +187,7 @@ function DeductionCard({ item, onEdit, onDelete }) {
             {item.created_by && (
               <p className="text-[10px] text-muted-foreground/70">Registrado por: {item.created_by.split("@")[0]}</p>
             )}
-            <div className="w-48 h-1.5 bg-muted rounded-full mt-1">
+            <div className="w-full max-w-[12rem] h-1.5 bg-muted rounded-full mt-1">
               <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(progress * 100, 100)}%` }} />
             </div>
           </div>
@@ -199,7 +199,7 @@ function DeductionCard({ item, onEdit, onDelete }) {
           <p className="text-xs text-muted-foreground">Total</p>
           <div className="flex gap-1 mt-1 justify-end">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Pencil className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDelete(item.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(item.id)}><Trash2 className="w-4 h-4" /></Button>
           </div>
         </div>
       </div>
