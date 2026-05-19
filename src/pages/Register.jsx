@@ -49,6 +49,8 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
+      // Guardar el DNI en el perfil del usuario
+      await base44.auth.updateMe({ dni: dni.trim() });
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Código incorrecto");

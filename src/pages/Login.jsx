@@ -7,12 +7,6 @@ import { Label } from "@/components/ui/label";
 import { LogIn, IdCard, Lock, Loader2, Info } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
-// If the input is exactly 8 digits, treat it as DNI and convert to internal email
-function resolveLogin(input) {
-  if (/^\d{8}$/.test(input.trim())) return `${input.trim()}@usuario.interno`;
-  return input.trim();
-}
-
 export default function Login() {
   const [searchParams] = useSearchParams();
   const isInvited = searchParams.get("invited") === "true";
@@ -25,8 +19,18 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const email = resolveLogin(identifier);
     try {
+      let email = identifier.trim();
+      // Si es un DNI (8 dígitos), buscar el correo real
+      if (/^\d{8}$/.test(email)) {
+        const res = await base44.functions.invoke("resolveLoginByDni", { dni: email });
+        if (!res.data?.email) {
+          setError("No se encontró un usuario con ese DNI");
+          setLoading(false);
+          return;
+        }
+        email = res.data.email;
+      }
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = "/";
     } catch (err) {
