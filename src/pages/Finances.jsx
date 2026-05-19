@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,17 @@ export default function Finances() {
     queryKey: ["fixedExpenses"],
     queryFn: () => base44.entities.FixedExpense.list(),
   });
+
+  // Real-time subscriptions so any external write immediately refreshes the lists
+  useEffect(() => {
+    const unsubExpense = base44.entities.Expense.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+    });
+    const unsubIncome = base44.entities.Income.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["incomes"] });
+    });
+    return () => { unsubExpense(); unsubIncome(); };
+  }, [queryClient]);
 
   const deleteFixedExpPayment = useMutation({
     mutationFn: (id) => base44.entities.FixedExpensePayment.delete(id),
