@@ -52,7 +52,11 @@ export default function Finances() {
   const [formOpen, setFormOpen] = useState(false);
   const [formType, setFormType] = useState("income");
   const [editing, setEditing] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    // Default to current month so new payments are always visible
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
   const queryClient = useQueryClient();
 
   const { data: incomes = [] } = useQuery({
