@@ -28,6 +28,7 @@ function getInstallmentAmount(deduction) {
 
 // Check if worker has completed 1+ year and hasn't received vacation for current year
 function getVacationStatus(worker) {
+  if (!worker.has_vacations) return null;
   if (!worker.hire_date) return null;
   const [hy, hm, hd] = worker.hire_date.split("-").map(Number);
   const hire = new Date(hy, hm - 1, hd);

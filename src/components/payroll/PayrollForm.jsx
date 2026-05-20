@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const INITIAL = { name: "", position: "", salary: "", payment_type: "mensual", payment_date: "", hire_date: "", status: "activo", vacation_paid_date: "" };
+const INITIAL = { name: "", position: "", salary: "", payment_type: "mensual", payment_date: "", hire_date: "", status: "activo", has_vacations: true, vacation_paid_date: "" };
 
 export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) {
   const [form, setForm] = useState(editingWorker || INITIAL);
@@ -70,6 +70,24 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
                 onChange={(e) => setForm({ ...form, payment_date: e.target.value })} />
             </div>
           </div>
+          {/* Tiene vacaciones */}
+          <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
+            <div>
+              <p className="text-sm font-medium">¿Tiene beneficio de vacaciones?</p>
+              <p className="text-xs text-muted-foreground">Si está activo, el sistema calculará y mostrará el botón de vacaciones</p>
+            </div>
+            <button type="button"
+              onClick={() => setForm({ ...form, has_vacations: !form.has_vacations })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                form.has_vacations ? "bg-emerald-500" : "bg-gray-300"
+              }`}>
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                form.has_vacations ? "translate-x-6" : "translate-x-1"
+              }`} />
+            </button>
+          </div>
+
+          {form.has_vacations && (
           <div className="space-y-2">
             <Label>Última fecha de vacaciones (opcional)</Label>
             <Input type="date" value={form.vacation_paid_date || ""}
@@ -77,6 +95,7 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
               placeholder="Dejar vacío si nunca ha tomado vacaciones" />
             <p className="text-xs text-muted-foreground">Si el trabajador ya tomó vacaciones antes, ingresa la fecha para que el sistema no muestre alerta prematuramente.</p>
           </div>
+          )}
           <div className="space-y-2">
             <Label>Estado</Label>
             <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>

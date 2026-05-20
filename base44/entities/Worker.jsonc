@@ -42,6 +42,11 @@
       "default": "activo",
       "description": "Estado del trabajador"
     },
+    "has_vacations": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el trabajador tiene derecho a vacaciones"
+    },
     "vacation_paid_date": {
       "type": "string",
       "format": "date",
