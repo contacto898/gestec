@@ -53,6 +53,50 @@ function getTodayLocal() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
+// ── Use Accumulated Days Dialog ─────────────────────────────────────────────
+function UseAccumulatedDialog({ open, onClose, worker, onConfirm }) {
+  const [daysToUse, setDaysToUse] = useState(1);
+  const [startDate, setStartDate] = useState(getTodayLocal());
+  const available = worker?.accumulated_vacation_days || 0;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Usar días acumulados — {worker?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="p-3 rounded-xl bg-orange-50 border border-orange-100 text-sm">
+            <p className="font-semibold text-orange-700">Días disponibles acumulados: {available}</p>
+            <p className="text-orange-600 text-xs mt-0.5">Estos días no generan pago, solo se registran como días libres tomados.</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Días a tomar (de {available})</label>
+            <input type="range" min={1} max={available} value={daysToUse}
+              onChange={(e) => setDaysToUse(+e.target.value)} className="w-full" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{daysToUse} día{daysToUse > 1 ? "s" : ""} libres</span>
+              <span>Quedan: {available - daysToUse} días</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Fecha de inicio</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+              className="w-full border rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button onClick={() => { onConfirm(worker, daysToUse, startDate); onClose(); }}
+              className="bg-orange-500 hover:bg-orange-600 gap-2">
+              <Palmtree className="w-4 h-4" /> Confirmar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Vacation Dialog ──────────────────────────────────────────────────────────
 function VacationDialog({ open, onClose, worker, onConfirm }) {
   const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto" | "acumular"
@@ -225,7 +269,7 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
 }
 
 // ── Worker Card (mobile/tablet) ───────────────────────────────────────────────
-function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, vacPaidToday }) {
+function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, onAccumClick, vacPaidToday }) {
   const [expanded, setExpanded] = useState(false);
   const workerDeductions = deductions.filter(
     (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
@@ -295,6 +339,12 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, v
               <Palmtree className="w-3.5 h-3.5" /> {alreadyVacPaid ? "Pagado" : "Vac."}
             </Button>
           )}
+          {!vacStatus && (w.accumulated_vacation_days > 0) && (
+            <Button size="sm" onClick={() => onAccumClick(w)}
+              className="gap-1 h-7 px-2 text-xs bg-orange-500 hover:bg-orange-600">
+              <Palmtree className="w-3.5 h-3.5" /> {w.accumulated_vacation_days}d
+            </Button>
+          )}
           <div className="flex gap-1 justify-end">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(w.id)}><Trash2 className="w-4 h-4" /></Button>
@@ -306,9 +356,10 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, v
 }
 
 // ── Main Table ───────────────────────────────────────────────────────────────
-export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, vacPaidToday }) {
+export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, onUseAccumulated, vacPaidToday }) {
   const [payWorker, setPayWorker] = useState(null);
   const [vacWorker, setVacWorker] = useState(null);
+  const [accumWorker, setAccumWorker] = useState(null);
   const [expanded, setExpanded] = useState({});
 
   const totalPayroll = workers.reduce((sum, w) => sum + (w.salary || 0), 0);
@@ -326,6 +377,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
               <WorkerCard key={w.id} w={w} deductions={deductions}
                 onEdit={onEdit} onDelete={onDelete}
                 onPayClick={setPayWorker} onVacClick={setVacWorker}
+                onAccumClick={setAccumWorker}
                 vacPaidToday={vacPaidToday} />
             ))
           )}
@@ -418,6 +470,12 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                             <span className="text-[10px] text-muted-foreground">Próx: {format(nextPayDate, "dd/MM/yyyy", { locale: es })}</span>
                           )}
                         </div>
+                        {!vacStatus && (w.accumulated_vacation_days > 0) && (
+                          <Button size="sm" onClick={() => setAccumWorker(w)}
+                            className="gap-1 h-7 px-2 text-xs bg-orange-500 hover:bg-orange-600">
+                            <Palmtree className="w-3.5 h-3.5" /> {w.accumulated_vacation_days} días acum.
+                          </Button>
+                        )}
                         {vacStatus && (
                           <Button size="sm"
                             onClick={alreadyVacPaid ? undefined : () => setVacWorker(w)}
@@ -466,6 +524,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
 
       <PayConfirmDialog open={!!payWorker} onClose={() => setPayWorker(null)} worker={payWorker} deductions={deductions} onPay={onPay} />
       <VacationDialog open={!!vacWorker} onClose={() => setVacWorker(null)} worker={vacWorker} onConfirm={onVacation} />
+      <UseAccumulatedDialog open={!!accumWorker} onClose={() => setAccumWorker(null)} worker={accumWorker} onConfirm={onUseAccumulated} />
     </>
   );
 }

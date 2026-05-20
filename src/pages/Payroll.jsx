@@ -107,6 +107,27 @@ export default function Payroll() {
     setVacPaidToday(getPaidToday("vacaciones"));
   };
 
+  const handleUseAccumulated = (worker, daysToUse, startDate) => {
+    const today = getTodayLocal();
+    const prevAccumulated = worker.accumulated_vacation_days || 0;
+    const remaining = prevAccumulated - daysToUse;
+    createVacRecord.mutate({
+      worker_id: worker.id,
+      worker_name: worker.name,
+      record_date: today,
+      vac_start_date: startDate,
+      option_selected: "acumular",
+      days_taken: daysToUse,
+      days_accumulated: remaining,
+      total_days_available: prevAccumulated,
+      amount_paid: 0,
+    });
+    updateWorker.mutate({
+      id: worker.id,
+      data: { ...worker, accumulated_vacation_days: remaining },
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -131,6 +152,7 @@ export default function Payroll() {
         onDelete={(id) => deleteWorker.mutate(id)}
         onPay={handlePay}
         onVacation={handleVacation}
+        onUseAccumulated={handleUseAccumulated}
         vacPaidToday={vacPaidToday}
       />
 
