@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Banknote } from "lucide-react";
 import FinanceForm from "@/components/finance/FinanceForm";
 import FinanceTable from "@/components/finance/FinanceTable";
 import MonthlySummary from "@/components/finance/MonthlySummary";
@@ -324,6 +324,30 @@ export default function Finances() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Recuadro: Gastos en efectivo del día */}
+      {(() => {
+        const todayStr = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        })();
+        const cashToday = expenses.filter(e => e.date === todayStr && (e.payment_method === "efectivo" || !e.payment_method));
+        const cashTotal = cashToday.reduce((sum, e) => sum + (e.amount || 0), 0);
+        return (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <Banknote className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-amber-700 font-medium uppercase tracking-wide">Gastos en Efectivo — Hoy</p>
+              <p className="text-2xl font-bold text-amber-800">
+                {new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(cashTotal)}
+              </p>
+              <p className="text-xs text-amber-600">{cashToday.length} gasto{cashToday.length !== 1 ? "s" : ""} en efectivo registrado{cashToday.length !== 1 ? "s" : ""} hoy</p>
+            </div>
+          </div>
+        );
+      })()}
 
       <MonthlySummary incomes={filteredIncomes} expenses={filteredExpenses} />
 

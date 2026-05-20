@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Banknote, ArrowLeftRight } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -41,9 +41,22 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
               <p className="text-xs text-muted-foreground mt-0.5">
                 {item.date ? format(parseLocalDate(item.date), "dd MMM yyyy", { locale: es }) : "—"}
               </p>
-              <Badge variant="secondary" className="font-normal text-xs mt-1">
-                {categoryLabels[item.category] || item.category}
-              </Badge>
+              <div className="flex items-center gap-1 flex-wrap mt-1">
+                <Badge variant="secondary" className="font-normal text-xs">
+                  {categoryLabels[item.category] || item.category}
+                </Badge>
+                {!isIncome && (
+                  item.payment_method === "transferencia" ? (
+                    <Badge variant="outline" className="gap-1 text-blue-600 border-blue-300 text-xs">
+                      <ArrowLeftRight className="w-2.5 h-2.5" /> Transf.
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-300 text-xs">
+                      <Banknote className="w-2.5 h-2.5" /> Efectivo
+                    </Badge>
+                  )
+                )}
+              </div>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               <span className={`font-bold text-sm ${isIncome ? "text-emerald-600" : "text-red-500"}`}>
@@ -71,6 +84,7 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
               <TableHead className="font-semibold text-right">Monto</TableHead>
               <TableHead className="font-semibold">Fecha</TableHead>
               <TableHead className="font-semibold">Categoría</TableHead>
+              {!isIncome && <TableHead className="font-semibold hidden sm:table-cell">Pago</TableHead>}
               <TableHead className="font-semibold hidden md:table-cell">Registrado por</TableHead>
               <TableHead className="font-semibold text-right">Acciones</TableHead>
             </TableRow>
@@ -90,6 +104,19 @@ export default function FinanceTable({ items, type, onEdit, onDelete }) {
                     {categoryLabels[item.category] || item.category}
                   </Badge>
                 </TableCell>
+                {!isIncome && (
+                  <TableCell className="hidden sm:table-cell">
+                    {item.payment_method === "transferencia" ? (
+                      <Badge variant="outline" className="gap-1 text-blue-600 border-blue-300">
+                        <ArrowLeftRight className="w-3 h-3" /> Transferencia
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-300">
+                        <Banknote className="w-3 h-3" /> Efectivo
+                      </Badge>
+                    )}
+                  </TableCell>
+                )}
                 <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                   {item.created_by ? item.created_by.split("@")[0] : "—"}
                 </TableCell>

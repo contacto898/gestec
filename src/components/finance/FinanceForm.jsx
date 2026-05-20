@@ -21,12 +21,12 @@ function getTodayLocal() {
 
 export default function FinanceForm({ open, onClose, onSubmit, type, editing }) {
   const today = getTodayLocal();
-  const [form, setForm] = useState(editing || { description: "", amount: "", date: today, category: "" });
+  const [form, setForm] = useState(editing || { description: "", amount: "", date: today, category: "", payment_method: "efectivo" });
 
   // Reload form data when editing item changes
   useEffect(() => {
     if (open) {
-      setForm(editing || { description: "", amount: "", date: today, category: "" });
+      setForm(editing || { description: "", amount: "", date: today, category: "", payment_method: "efectivo" });
     }
   }, [open, editing]);
 
@@ -83,6 +83,18 @@ export default function FinanceForm({ open, onClose, onSubmit, type, editing }) 
               </SelectContent>
             </Select>
           </div>
+          {type === "expense" && (
+            <div className="space-y-2">
+              <Label>Tipo de pago</Label>
+              <Select value={form.payment_method || "efectivo"} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
+                <SelectTrigger><SelectValue placeholder="Tipo de pago" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                  <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
             <Button type="submit">{editing ? "Actualizar" : "Agregar"}</Button>

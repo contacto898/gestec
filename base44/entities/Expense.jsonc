@@ -27,6 +27,15 @@
         "otros"
       ],
       "description": "Categor\u00eda del gasto"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "efectivo",
+        "transferencia"
+      ],
+      "default": "efectivo",
+      "description": "Tipo de pago: efectivo o transferencia"
     }
   },
   "required": [
