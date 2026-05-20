@@ -252,6 +252,9 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, v
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">{w.position || "—"}</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm">
+            {(w.accumulated_vacation_days > 0) && (
+              <span className="text-muted-foreground">Vac. acumuladas: <span className="font-semibold text-orange-600">{w.accumulated_vacation_days} días</span></span>
+            )}
             <span className="text-muted-foreground">Salario: <span className="font-semibold text-foreground">{formatCurrency(w.salary)}</span></span>
             <span className="text-muted-foreground">A pagar: <span className="font-semibold text-primary">{formatCurrency(periodSalary)}</span></span>
             {totalDed > 0 && <span className="text-muted-foreground">Desc: <span className="font-semibold text-red-500">-{formatCurrency(totalDed)}</span></span>}
@@ -376,7 +379,12 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{w.position || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      <div>{w.position || "—"}</div>
+                      {w.accumulated_vacation_days > 0 && (
+                        <div className="text-xs text-orange-600 font-medium mt-0.5">🏖 {w.accumulated_vacation_days} días acum.</div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-semibold">{formatCurrency(w.salary)}</TableCell>
                     <TableCell className="text-right font-semibold text-primary">{formatCurrency(periodSalary)}</TableCell>
                     <TableCell className="text-right">
