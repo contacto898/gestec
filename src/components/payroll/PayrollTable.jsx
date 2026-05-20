@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Pencil, Trash2, DollarSign, ChevronDown, ChevronUp, Palmtree } from "lucide-react";
 import { format, differenceInMonths, differenceInYears } from "date-fns";
 import { es } from "date-fns/locale";
-import { isAlreadyPaidThisPeriod, getNextPaymentDate } from "@/lib/paidToday";
+import { isAlreadyPaidThisPeriod, getNextPaymentDate, isPaymentDue } from "@/lib/paidToday";
 
 const paymentTypeLabels = { mensual: "Mensual", quincenal: "Quincenal", semanal: "Semanal" };
 
@@ -280,8 +280,10 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
   const neto = periodSalary - totalDed;
   const vacStatus = getVacationStatus(w);
   const alreadyPaid = isAlreadyPaidThisPeriod(w);
-  const nextPayDate = alreadyPaid ? getNextPaymentDate(w) : null;
+  const payDue = isPaymentDue(w);
+  const nextPayDate = getNextPaymentDate(w);
   const alreadyVacPaid = vacPaidToday?.includes(w.id);
+  const canPay = payDue && !alreadyPaid;
 
   return (
     <div className="p-4 border-b last:border-b-0 hover:bg-muted/20 transition-colors">
@@ -325,12 +327,12 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
           )}
         </div>
         <div className="flex flex-col gap-1 shrink-0">
-          <Button size="sm" onClick={alreadyPaid ? undefined : () => onPayClick(w)} disabled={alreadyPaid}
-            className={`gap-1 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}
-            title={alreadyPaid && nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}>
-            <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
+          <Button size="sm" onClick={canPay ? () => onPayClick(w) : undefined} disabled={!canPay}
+            className={`gap-1 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : !payDue ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"}`}
+            title={nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}>
+            <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : !payDue ? "Pendiente" : "Pagar"}
           </Button>
-          {alreadyPaid && nextPayDate && (
+          {(!canPay && nextPayDate) && (
             <p className="text-[10px] text-muted-foreground text-center">Próx: {format(nextPayDate, "dd/MM", { locale: es })}</p>
           )}
           {vacStatus && (
@@ -411,8 +413,10 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                 const neto = periodSalary - totalDed;
                 const vacStatus = getVacationStatus(w);
                 const alreadyPaid = isAlreadyPaidThisPeriod(w);
-                const nextPayDate = alreadyPaid ? getNextPaymentDate(w) : null;
+                const payDue = isPaymentDue(w);
+                const nextPayDate = getNextPaymentDate(w);
                 const alreadyVacPaid = vacPaidToday?.includes(w.id);
+                const canPay = payDue && !alreadyPaid;
 
                 return [
                   <TableRow key={w.id} className="hover:bg-muted/30 transition-colors">
@@ -460,13 +464,13 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                       <div className="flex justify-end gap-1 flex-wrap">
                         <div className="flex flex-col items-end gap-0.5">
                           <Button size="sm"
-                            onClick={alreadyPaid ? undefined : () => setPayWorker(w)}
-                            disabled={alreadyPaid}
-                            title={alreadyPaid && nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}
-                            className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
-                            <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
+                            onClick={canPay ? () => setPayWorker(w) : undefined}
+                            disabled={!canPay}
+                            title={nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}
+                            className={`gap-1.5 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : !payDue ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+                            <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : !payDue ? "Pendiente" : "Pagar"}
                           </Button>
-                          {alreadyPaid && nextPayDate && (
+                          {(!canPay && nextPayDate) && (
                             <span className="text-[10px] text-muted-foreground">Próx: {format(nextPayDate, "dd/MM/yyyy", { locale: es })}</span>
                           )}
                         </div>

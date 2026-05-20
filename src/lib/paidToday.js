@@ -41,6 +41,27 @@ export function getNextPaymentDate(worker) {
   return next;
 }
 
+// Returns true if today is the payment due date (period has elapsed since last payment)
+export function isPaymentDue(worker) {
+  const today = parseLocal(getTodayLocal());
+  const periodDays = getPeriodDays(worker.payment_type);
+
+  if (worker.last_payment_date) {
+    const lastPaid = parseLocal(worker.last_payment_date);
+    const diffDays = Math.floor((today - lastPaid) / (1000 * 60 * 60 * 24));
+    return diffDays >= periodDays;
+  }
+
+  // No payment yet — use hire date as reference
+  if (worker.hire_date) {
+    const hire = parseLocal(worker.hire_date);
+    const diffDays = Math.floor((today - hire) / (1000 * 60 * 60 * 24));
+    return diffDays >= periodDays;
+  }
+
+  return true; // No reference date → always enable
+}
+
 // Legacy localStorage helpers — kept for vacation tracking only
 function getTodayLocalKey() {
   const d = new Date();
