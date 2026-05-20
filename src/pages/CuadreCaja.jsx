@@ -231,22 +231,22 @@ export default function CuadreCaja() {
           </Card>
 
           {/* Faltante */}
-          <Card className={`p-4 ${faltante >= 0 ? "bg-orange-50 border-orange-200" : "bg-red-50 border-red-200"}`}>
+          <Card className={`p-4 ${faltante > 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
             <div className="flex items-center gap-1.5">
-              {faltante < 0 ? (
+              {faltante <= 0 ? (
                 <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
               ) : (
-                <CheckCircle2 className="w-4 h-4 text-orange-500 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
               )}
-              <p className={`text-xs font-medium uppercase tracking-wide ${faltante < 0 ? "text-red-700" : "text-orange-700"}`}>
-                Faltante
+              <p className={`text-xs font-medium uppercase tracking-wide ${faltante <= 0 ? "text-red-700" : "text-emerald-700"}`}>
+                {faltante <= 0 ? "Faltante" : "Sobrante"}
               </p>
             </div>
-            <p className={`text-2xl font-bold mt-1 tabular-nums ${faltante < 0 ? "text-red-600" : "text-orange-600"}`}>
+            <p className={`text-2xl font-bold mt-1 tabular-nums ${faltante <= 0 ? "text-red-600" : "text-emerald-600"}`}>
               {formatCurrency(Math.abs(faltante))}
             </p>
-            <p className={`text-xs mt-1 ${faltante < 0 ? "text-red-500" : "text-orange-500"}`}>
-              {faltante < 0 ? "Falta en caja" : "Sobra en caja"}
+            <p className={`text-xs mt-1 ${faltante <= 0 ? "text-red-500" : "text-emerald-500"}`}>
+              {faltante <= 0 ? "Falta en caja" : "Sobra en caja"}
             </p>
           </Card>
         </div>
