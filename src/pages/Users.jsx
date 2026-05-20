@@ -285,6 +285,11 @@ export default function UsersPage() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const updateUserRole = useMutation({
+    mutationFn: ({ id, role }) => base44.entities.User.update(id, { role }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+  });
+
   const createRole = useMutation({
     mutationFn: (d) => base44.entities.UserRole.create(d),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["userRoles"] }),
@@ -359,6 +364,22 @@ export default function UsersPage() {
                         <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs"
                           onClick={() => setChangePassOpen(true)}>
                           <KeyRound className="w-3 h-3" /> Cambiar clave
+                        </Button>
+                      )}
+                      {currentUser?.role === "admin" && u.id !== currentUser?.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            const newRole = u.role === "admin" ? "user" : "admin";
+                            const label = newRole === "admin" ? "Administrador" : "Usuario";
+                            if (window.confirm(`¿Cambiar el rol de ${u.full_name || u.email} a "${label}"?`)) {
+                              updateUserRole.mutate({ id: u.id, role: newRole });
+                            }
+                          }}
+                        >
+                          {u.role === "admin" ? "Quitar admin" : "Hacer admin"}
                         </Button>
                       )}
                     </div>
