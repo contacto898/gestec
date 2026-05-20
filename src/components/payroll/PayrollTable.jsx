@@ -349,6 +349,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
               {workers.map((w) => {
                 const workerDeductions = deductions.filter(
                   (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
+                    && (!d.start_date || d.start_date <= getTodayLocal())
                 );
                 const totalDed = workerDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
                 const periodSalary = getSalaryByType(w.salary, w.payment_type);
