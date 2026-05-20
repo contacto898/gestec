@@ -39,6 +39,8 @@ export default function VacationReport({ open, onClose, workers }) {
     enabled: open,
   });
 
+  const workerIds = new Set(workers.map((w) => w.id));
+
   const filtered = filterWorker === "all"
     ? records
     : records.filter((r) => r.worker_id === filterWorker);
@@ -72,7 +74,12 @@ export default function VacationReport({ open, onClose, workers }) {
               {filtered.map((r) => (
                 <div key={r.id} className="border rounded-xl p-3 space-y-2 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="font-semibold text-sm">{r.worker_name}</span>
+                    <span className="font-semibold text-sm">
+                      {r.worker_name}
+                      {!workerIds.has(r.worker_id) && (
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground border rounded px-1 py-0.5">(eliminado)</span>
+                      )}
+                    </span>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-xs font-normal ${optionColors[r.option_selected] || "bg-gray-100 text-gray-700"}`}>
                         {optionLabels[r.option_selected] || r.option_selected}
