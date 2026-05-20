@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const INITIAL = { name: "", position: "", salary: "", payment_type: "mensual", payment_date: "", hire_date: "", status: "activo" };
+const INITIAL = { name: "", position: "", salary: "", payment_type: "mensual", payment_date: "", hire_date: "", status: "activo", vacation_paid_date: "" };
 
 export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) {
   const [form, setForm] = useState(editingWorker || INITIAL);
@@ -69,6 +69,13 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
               <Input type="date" value={form.payment_date}
                 onChange={(e) => setForm({ ...form, payment_date: e.target.value })} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Última fecha de vacaciones (opcional)</Label>
+            <Input type="date" value={form.vacation_paid_date || ""}
+              onChange={(e) => setForm({ ...form, vacation_paid_date: e.target.value })}
+              placeholder="Dejar vacío si nunca ha tomado vacaciones" />
+            <p className="text-xs text-muted-foreground">Si el trabajador ya tomó vacaciones antes, ingresa la fecha para que el sistema no muestre alerta prematuramente.</p>
           </div>
           <div className="space-y-2">
             <Label>Estado</Label>
