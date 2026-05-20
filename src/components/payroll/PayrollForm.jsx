@@ -25,7 +25,7 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editingWorker ? "Editar Trabajador" : "Nuevo Trabajador"}</DialogTitle>
         </DialogHeader>
