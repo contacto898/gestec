@@ -52,7 +52,13 @@ export function isPaymentDue(worker) {
     return diffDays >= periodDays;
   }
 
-  // No payment yet — use hire date as reference
+  // No payment yet — use scheduled payment_date if set
+  if (worker.payment_date) {
+    const scheduled = parseLocal(worker.payment_date);
+    return today >= scheduled;
+  }
+
+  // Fallback: use hire date
   if (worker.hire_date) {
     const hire = parseLocal(worker.hire_date);
     const diffDays = Math.floor((today - hire) / (1000 * 60 * 60 * 24));
