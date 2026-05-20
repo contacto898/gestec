@@ -1,0 +1,13 @@
+{
+  "name": "PendingAdminInvite",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email del usuario invitado como admin"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}

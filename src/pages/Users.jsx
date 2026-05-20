@@ -109,6 +109,9 @@ function CreateUserDialog({ open, onClose }) {
     setMsg(null);
     try {
       await base44.users.inviteUser(form.email.trim(), form.appRole);
+      if (form.appRole === "admin") {
+        await base44.entities.PendingAdminInvite.create({ email: form.email.trim() });
+      }
       setDone(true);
     } catch (e) {
       setMsg({ type: "error", text: e.message || "Error al crear usuario" });
