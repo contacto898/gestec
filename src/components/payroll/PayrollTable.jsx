@@ -15,15 +15,10 @@ function formatCurrency(n) {
 }
 
 
-// Salary field stores the PER-PERIOD amount (weekly workers enter weekly salary, etc.)
-function getSalaryByType(salary) {
-  return salary;
-}
-
-// Convert period salary to monthly equivalent for vacation calculation
-function getMonthlyEquivalent(salary, paymentType) {
-  if (paymentType === "quincenal") return salary * 2;
-  if (paymentType === "semanal") return salary * 4.33;
+// Returns the amount to pay per period based on monthly salary
+function getSalaryByType(salary, paymentType) {
+  if (paymentType === "quincenal") return salary / 2;
+  if (paymentType === "semanal") return salary / 4;
   return salary; // mensual
 }
 
@@ -47,8 +42,8 @@ function getVacationStatus(worker) {
     const monthsSince = differenceInMonths(now, lastVacPaid);
     if (monthsSince < 11) return null; // Not due yet
   }
-  // Vacation = half a month salary (based on monthly equivalent)
-  const vacationAmount = getMonthlyEquivalent(worker.salary, worker.payment_type) / 2;
+  // Vacation = half a month salary
+  const vacationAmount = worker.salary / 2;
   return { years, vacationAmount };
 }
 
@@ -179,7 +174,7 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
   const activeDeductions = deductions.filter(
     (d) => d.worker_id === worker?.id && d.status !== "completado" && d.paid_installments < d.installments
   );
-  const periodSalary = getSalaryByType(worker?.salary || 0);
+  const periodSalary = getSalaryByType(worker?.salary || 0, worker?.payment_type);
   const totalDeductions = activeDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
   const netPay = periodSalary - totalDeductions;
 
@@ -235,7 +230,7 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, v
     (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
   );
   const totalDed = workerDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
-  const periodSalary = getSalaryByType(w.salary);
+  const periodSalary = getSalaryByType(w.salary, w.payment_type);
   const neto = periodSalary - totalDed;
   const vacStatus = getVacationStatus(w);
   const alreadyPaid = isAlreadyPaidThisPeriod(w);
@@ -354,7 +349,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                   (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
                 );
                 const totalDed = workerDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
-                const periodSalary = getSalaryByType(w.salary);
+                const periodSalary = getSalaryByType(w.salary, w.payment_type);
                 const neto = periodSalary - totalDed;
                 const vacStatus = getVacationStatus(w);
                 const alreadyPaid = isAlreadyPaidThisPeriod(w);
