@@ -12,7 +12,7 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
 
   useEffect(() => {
     if (open) {
-      setForm(editingWorker || INITIAL);
+      setForm(editingWorker ? { has_vacations: true, ...editingWorker } : INITIAL);
     }
   }, [open, editingWorker]);
 
@@ -70,32 +70,31 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
                 onChange={(e) => setForm({ ...form, payment_date: e.target.value })} />
             </div>
           </div>
-          {/* Tiene vacaciones */}
-          <div className="flex items-center justify-between p-3 rounded-xl border bg-muted/30">
-            <div>
-              <p className="text-sm font-medium">¿Tiene beneficio de vacaciones?</p>
-              <p className="text-xs text-muted-foreground">Si está activo, el sistema calculará y mostrará el botón de vacaciones</p>
-            </div>
-            <button type="button"
+
+          {/* Toggle vacaciones */}
+          <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
+            <button
+              type="button"
               onClick={() => setForm({ ...form, has_vacations: !form.has_vacations })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                form.has_vacations ? "bg-emerald-500" : "bg-gray-300"
-              }`}>
-              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                form.has_vacations ? "translate-x-6" : "translate-x-1"
-              }`} />
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${form.has_vacations ? "bg-emerald-500" : "bg-gray-300"}`}
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${form.has_vacations ? "translate-x-6" : "translate-x-1"}`} />
             </button>
+            <div className="min-w-0">
+              <p className="text-sm font-medium">¿Tiene beneficio de vacaciones?</p>
+              <p className="text-xs text-muted-foreground">Si está activo, el sistema mostrará el botón de vacaciones</p>
+            </div>
           </div>
 
           {form.has_vacations && (
-          <div className="space-y-2">
-            <Label>Última fecha de vacaciones (opcional)</Label>
-            <Input type="date" value={form.vacation_paid_date || ""}
-              onChange={(e) => setForm({ ...form, vacation_paid_date: e.target.value })}
-              placeholder="Dejar vacío si nunca ha tomado vacaciones" />
-            <p className="text-xs text-muted-foreground">Si el trabajador ya tomó vacaciones antes, ingresa la fecha para que el sistema no muestre alerta prematuramente.</p>
-          </div>
+            <div className="space-y-2">
+              <Label>Última fecha de vacaciones (opcional)</Label>
+              <Input type="date" value={form.vacation_paid_date || ""}
+                onChange={(e) => setForm({ ...form, vacation_paid_date: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Si ya tomó vacaciones antes, ingresa la fecha para evitar alertas prematuras.</p>
+            </div>
           )}
+
           <div className="space-y-2">
             <Label>Estado</Label>
             <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
