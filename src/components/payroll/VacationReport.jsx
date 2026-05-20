@@ -40,10 +40,10 @@ export default function VacationReport({ open, onClose, workers }) {
   });
 
   const workerIds = new Set(workers.map((w) => w.id));
-  const workerNames = new Set(workers.map((w) => (w.name || "").toUpperCase()));
+  const workerNames = new Set(workers.map((w) => w.name?.toUpperCase()));
 
   const isDeleted = (r) =>
-    !workerIds.has(r.worker_id) && !workerNames.has((r.worker_name || "").toUpperCase());
+    !workerIds.has(r.worker_id) && !workerNames.has(r.worker_name?.toUpperCase());
 
   const filtered = filterWorker === "all"
     ? records
@@ -81,7 +81,7 @@ export default function VacationReport({ open, onClose, workers }) {
                     <span className="font-semibold text-sm">
                       {r.worker_name}
                       {isDeleted(r) && (
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground border rounded px-1 py-0.5">(eliminado)</span>
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">(eliminado)</span>
                       )}
                     </span>
                     <div className="flex items-center gap-2">
