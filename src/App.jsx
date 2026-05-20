@@ -18,6 +18,7 @@ import Categories from "@/pages/Categories";
 import Deductions from "@/pages/Deductions";
 import FixedExpenses from "@/pages/FixedExpenses";
 import UsersPage from "@/pages/Users";
+import CuadreCaja from "@/pages/CuadreCaja";
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
           <Route path="/descuentos" element={<Deductions />} />
           <Route path="/gastos-fijos" element={<FixedExpenses />} />
           <Route path="/usuarios" element={<UsersPage />} />
+          <Route path="/cuadre-caja" element={<CuadreCaja />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

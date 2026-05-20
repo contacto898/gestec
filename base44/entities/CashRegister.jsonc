@@ -1,0 +1,26 @@
+{
+  "name": "CashRegister",
+  "type": "object",
+  "properties": {
+    "concept": {
+      "type": "string",
+      "description": "Nombre del concepto (ej: Efectivo Chepen, BCP, etc.)"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monto ingresado manualmente"
+    },
+    "order": {
+      "type": "number",
+      "description": "Orden de aparici\u00f3n en la lista"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del \u00faltimo cuadre"
+    }
+  },
+  "required": [
+    "concept"
+  ]
+}
