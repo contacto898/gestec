@@ -1,0 +1,59 @@
+{
+  "name": "VacationRecord",
+  "type": "object",
+  "properties": {
+    "worker_id": {
+      "type": "string",
+      "description": "ID del trabajador"
+    },
+    "worker_name": {
+      "type": "string",
+      "description": "Nombre del trabajador"
+    },
+    "record_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se registr\u00f3"
+    },
+    "vac_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de inicio de vacaciones"
+    },
+    "option_selected": {
+      "type": "string",
+      "enum": [
+        "pago",
+        "vacaciones",
+        "mixto",
+        "acumular"
+      ],
+      "description": "Opci\u00f3n elegida"
+    },
+    "days_taken": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00edas libres tomados"
+    },
+    "days_accumulated": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00edas acumulados para el siguiente ciclo"
+    },
+    "total_days_available": {
+      "type": "number",
+      "description": "D\u00edas disponibles en ese ciclo (15 + acumulados previos)"
+    },
+    "amount_paid": {
+      "type": "number",
+      "default": 0,
+      "description": "Monto pagado"
+    }
+  },
+  "required": [
+    "worker_id",
+    "worker_name",
+    "record_date",
+    "option_selected"
+  ]
+}

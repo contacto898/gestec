@@ -61,7 +61,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
   // For "acumular": how many days to take now vs accumulate
   const [daysToTakeNow, setDaysToTakeNow] = useState(0);
   const vacAmount = worker?.salary / 2 || 0;
-  const totalVacDays = 15;
+  const totalVacDays = 15 + (worker?.accumulated_vacation_days || 0);
 
   // For "acumular": days taken now generate proportional pay reduction
   const accumulatePaidAmount = daysToTakeNow > 0 ? 0 : 0; // No pay in accumulate mode

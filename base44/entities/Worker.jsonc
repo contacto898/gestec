@@ -51,6 +51,11 @@
       "type": "string",
       "format": "date",
       "description": "Fecha del \u00faltimo pago de planilla registrado"
+    },
+    "accumulated_vacation_days": {
+      "type": "number",
+      "default": 0,
+      "description": "D\u00edas de vacaciones acumulados de ciclos anteriores"
     }
   },
   "required": [
