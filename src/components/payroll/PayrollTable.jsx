@@ -173,6 +173,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
 function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
   const activeDeductions = deductions.filter(
     (d) => d.worker_id === worker?.id && d.status !== "completado" && d.paid_installments < d.installments
+      && (!d.start_date || d.start_date <= getTodayLocal())
   );
   const periodSalary = getSalaryByType(worker?.salary || 0, worker?.payment_type);
   const totalDeductions = activeDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
@@ -228,6 +229,7 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, v
   const [expanded, setExpanded] = useState(false);
   const workerDeductions = deductions.filter(
     (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
+      && (!d.start_date || d.start_date <= getTodayLocal())
   );
   const totalDed = workerDeductions.reduce((s, d) => s + getInstallmentAmount(d), 0);
   const periodSalary = getSalaryByType(w.salary, w.payment_type);
