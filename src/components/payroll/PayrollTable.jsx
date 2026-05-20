@@ -473,7 +473,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                         {!vacStatus && (w.accumulated_vacation_days > 0) && (
                           <Button size="sm" onClick={() => setAccumWorker(w)}
                             className="gap-1 h-7 px-2 text-xs bg-orange-500 hover:bg-orange-600">
-                            <Palmtree className="w-3.5 h-3.5" /> {w.accumulated_vacation_days} días acum.
+                            <Palmtree className="w-3.5 h-3.5" /> {w.accumulated_vacation_days}d acum.
                           </Button>
                         )}
                         {vacStatus && (
