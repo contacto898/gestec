@@ -89,7 +89,7 @@ export default function CuadreCaja() {
   };
 
   const totalCuadre = items.reduce((s, i) => s + (i.amount || 0), 0);
-  const faltante = balanceTotal - totalCuadre;
+  const faltante = totalCuadre - balanceTotal;
 
   // Last cuadre date: take the most recent last_updated from any item
   const lastCuadreDate = items
