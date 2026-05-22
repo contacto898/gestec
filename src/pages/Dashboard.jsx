@@ -110,10 +110,10 @@ export default function Dashboard() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} />
+        <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} className="col-span-1" />
 
         {/* Carga Fija Total */}
-        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300">
+        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300 col-span-1">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-muted-foreground">Carga Fija Total</p>
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -121,10 +121,10 @@ export default function Dashboard() {
             </div>
           </div>
           <div>
-            <p className="text-2xl lg:text-3xl font-bold tracking-tight">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
+            <p className="text-lg lg:text-2xl font-bold tracking-tight break-all">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="hidden sm:grid grid-cols-2 gap-2">
             <div>
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Wallet className="w-3 h-3" />
