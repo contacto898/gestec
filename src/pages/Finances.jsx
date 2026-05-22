@@ -144,28 +144,72 @@ export default function Finances() {
 
   const createIncome = useMutation({
     mutationFn: (data) => base44.entities.Income.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["incomes"] }),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["incomes"] });
+      const prev = queryClient.getQueryData(["incomes"]) || [];
+      const temp = { ...data, id: "temp-" + Date.now() };
+      queryClient.setQueryData(["incomes"], [temp, ...prev]);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => queryClient.setQueryData(["incomes"], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["incomes"] }),
   });
   const updateIncome = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Income.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["incomes"] }),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["incomes"] });
+      const prev = queryClient.getQueryData(["incomes"]) || [];
+      queryClient.setQueryData(["incomes"], prev.map(i => i.id === id ? { ...i, ...data } : i));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => queryClient.setQueryData(["incomes"], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["incomes"] }),
   });
   const deleteIncome = useMutation({
     mutationFn: (id) => base44.entities.Income.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["incomes"] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["incomes"] });
+      const prev = queryClient.getQueryData(["incomes"]) || [];
+      queryClient.setQueryData(["incomes"], prev.filter(i => i.id !== id));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => queryClient.setQueryData(["incomes"], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["incomes"] }),
   });
 
   const createExpense = useMutation({
     mutationFn: (data) => base44.entities.Expense.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ["expenses"] });
+      const prev = queryClient.getQueryData(["expenses"]) || [];
+      const temp = { ...data, id: "temp-" + Date.now() };
+      queryClient.setQueryData(["expenses"], [temp, ...prev]);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => queryClient.setQueryData(["expenses"], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
   });
   const updateExpense = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Expense.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["expenses"] });
+      const prev = queryClient.getQueryData(["expenses"]) || [];
+      queryClient.setQueryData(["expenses"], prev.map(e => e.id === id ? { ...e, ...data } : e));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => queryClient.setQueryData(["expenses"], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
   });
   const deleteExpense = useMutation({
     mutationFn: (id) => base44.entities.Expense.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["expenses"] });
+      const prev = queryClient.getQueryData(["expenses"]) || [];
+      queryClient.setQueryData(["expenses"], prev.filter(e => e.id !== id));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => queryClient.setQueryData(["expenses"], ctx.prev),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
   });
 
   const handleSubmit = (data) => {

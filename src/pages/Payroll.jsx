@@ -26,9 +26,40 @@ export default function Payroll() {
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list("-created_date") });
   const { data: deductions = [] } = useQuery({ queryKey: ["deductions"], queryFn: () => base44.entities.Deduction.list() });
 
-  const createWorker = useMutation({ mutationFn: (d) => base44.entities.Worker.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
-  const updateWorker = useMutation({ mutationFn: ({ id, data }) => base44.entities.Worker.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }), mutationKey: ["updateWorker"] });
-  const deleteWorker = useMutation({ mutationFn: (id) => base44.entities.Worker.delete(id), onSuccess: () => qc.invalidateQueries({ queryKey: ["workers"] }) });
+  const createWorker = useMutation({
+    mutationFn: (d) => base44.entities.Worker.create(d),
+    onMutate: async (d) => {
+      await qc.cancelQueries({ queryKey: ["workers"] });
+      const prev = qc.getQueryData(["workers"]) || [];
+      qc.setQueryData(["workers"], [...prev, { ...d, id: "temp-" + Date.now() }]);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => qc.setQueryData(["workers"], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["workers"] }),
+  });
+  const updateWorker = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Worker.update(id, data),
+    mutationKey: ["updateWorker"],
+    onMutate: async ({ id, data }) => {
+      await qc.cancelQueries({ queryKey: ["workers"] });
+      const prev = qc.getQueryData(["workers"]) || [];
+      qc.setQueryData(["workers"], prev.map(w => w.id === id ? { ...w, ...data } : w));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => qc.setQueryData(["workers"], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["workers"] }),
+  });
+  const deleteWorker = useMutation({
+    mutationFn: (id) => base44.entities.Worker.delete(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["workers"] });
+      const prev = qc.getQueryData(["workers"]) || [];
+      qc.setQueryData(["workers"], prev.filter(w => w.id !== id));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => qc.setQueryData(["workers"], ctx.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["workers"] }),
+  });
   const createVacRecord = useMutation({ mutationFn: (d) => base44.entities.VacationRecord.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["vacation_records"] }) });
   const createExpense = useMutation({
     mutationFn: (d) => base44.entities.Expense.create(d),

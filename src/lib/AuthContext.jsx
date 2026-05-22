@@ -14,6 +14,17 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
+  // Auto-detect system dark mode
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyTheme = (e) => {
+      document.documentElement.classList.toggle("dark", e.matches);
+    };
+    applyTheme(mq);
+    mq.addEventListener("change", applyTheme);
+    return () => mq.removeEventListener("change", applyTheme);
+  }, []);
+
   useEffect(() => {
     checkAppState();
   }, []);

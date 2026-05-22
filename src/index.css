@@ -81,8 +81,18 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground font-inter;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  button, a, [role="button"], [role="tab"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  input, textarea, select {
+    font-size: 16px;
   }
 }

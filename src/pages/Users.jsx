@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Shield, UserPlus, Users, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield, UserPlus, Users, Eye, EyeOff, KeyRound, UserX } from "lucide-react";
 
 const ALL_PERMISSIONS = [
   { id: "dashboard", label: "Dashboard" },
@@ -265,12 +265,60 @@ function ChangePasswordDialog({ open, onClose }) {
   );
 }
 
+// ── Delete Account Dialog ─────────────────────────────────────────────────────
+function DeleteAccountDialog({ open, onClose, currentUser }) {
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => { if (open) setConfirm(""); }, [open]);
+
+  const handleDelete = async () => {
+    setLoading(true);
+    try {
+      await base44.entities.User.delete(currentUser.id);
+      base44.auth.logout();
+    } catch (e) {
+      alert(e.message || "Error al eliminar la cuenta");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <UserX className="w-5 h-5" /> Eliminar mi Cuenta
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-2">
+          <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+            <p className="text-sm text-destructive font-medium">⚠️ Esta acción es irreversible.</p>
+            <p className="text-xs text-muted-foreground mt-1">Tu cuenta será eliminada permanentemente. Todos tus datos de sesión se borrarán.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Escribe <strong>ELIMINAR</strong> para confirmar</Label>
+            <Input placeholder="ELIMINAR" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={loading || confirm !== "ELIMINAR"} className="gap-2">
+              <UserX className="w-4 h-4" /> {loading ? "Eliminando..." : "Eliminar cuenta"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function UsersPage() {
   const [roleFormOpen, setRoleFormOpen] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const qc = useQueryClient();
 
@@ -321,6 +369,9 @@ export default function UsersPage() {
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setChangePassOpen(true)} className="gap-2">
             <KeyRound className="w-4 h-4" /> Cambiar mi Clave
+          </Button>
+          <Button variant="outline" onClick={() => setDeleteAccountOpen(true)} className="gap-2 text-destructive border-destructive/30 hover:bg-destructive/10">
+            <UserX className="w-4 h-4" /> Eliminar Cuenta
           </Button>
           <Button variant="outline" onClick={() => { setEditingRole(null); setRoleFormOpen(true); }} className="gap-2">
             <Shield className="w-4 h-4" /> Nuevo Rol
@@ -458,6 +509,7 @@ export default function UsersPage() {
         onSubmit={handleRoleSubmit} editing={editingRole} />
       <CreateUserDialog open={createUserOpen} onClose={() => setCreateUserOpen(false)} />
       <ChangePasswordDialog open={changePassOpen} onClose={() => setChangePassOpen(false)} />
+      <DeleteAccountDialog open={deleteAccountOpen} onClose={() => setDeleteAccountOpen(false)} currentUser={currentUser} />
     </div>
   );
 }
