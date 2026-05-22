@@ -342,7 +342,7 @@ export default function UsersPage() {
   });
 
   const updateUserRole = useMutation({
-    mutationFn: ({ id, role }) => base44.entities.User.update(id, { role }),
+    mutationFn: ({ id, role }) => base44.functions.invoke('updateUserRole', { userId: id, role }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
 
