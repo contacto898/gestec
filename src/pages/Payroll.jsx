@@ -135,7 +135,7 @@ export default function Payroll() {
       amount_paid: paidAmount,
     });
 
-    const newAccumulated = option === "acumular" ? prevAccumulated + daysAccumulated : 0;
+    const newAccumulated = option === "acumular" ? daysAccumulated : 0;
     const shouldMarkDate = option !== "acumular" || days > 0;
     updateWorker.mutate({
       id: worker.id,
