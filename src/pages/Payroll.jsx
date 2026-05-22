@@ -7,7 +7,7 @@ import { Plus, Palmtree } from "lucide-react";
 import VacationReport from "@/components/payroll/VacationReport";
 import PayrollForm from "@/components/payroll/PayrollForm";
 import PayrollTable from "@/components/payroll/PayrollTable";
-import { getPaidToday, addPaidToday } from "@/lib/paidToday";
+import { getPaidToday, addPaidToday, removePaidToday } from "@/lib/paidToday";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 function getTodayLocal() {
@@ -202,6 +202,8 @@ export default function Payroll() {
       });
     }
 
+    removePaidToday("vacaciones", record.worker_id);
+    setVacPaidToday(getPaidToday("vacaciones"));
     qc.invalidateQueries({ queryKey: ["vacation_records"] });
     qc.invalidateQueries({ queryKey: ["workers"] });
     qc.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
