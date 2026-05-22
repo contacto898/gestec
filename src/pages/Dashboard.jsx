@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 import MobileSelect from "@/components/ui/MobileSelect";
 import StatsCard from "@/components/dashboard/StatsCard";
-import { Users, TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
+import { Users, TrendingUp, TrendingDown, Wallet, Receipt, Building2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -70,7 +70,8 @@ export default function Dashboard() {
   const totalAllExpense = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const balanceTotal = totalAllIncome - totalAllExpense;
 
-  const totalFixedExpenses = fixedExpenses.filter(f => f.status === "activo").reduce((s, f) => s + (f.amount || 0), 0);
+  const activeFixedExpenses = fixedExpenses.filter(f => f.status === "activo");
+  const totalFixedExpenses = activeFixedExpenses.reduce((s, f) => s + (f.amount || 0), 0);
 
   const incomeByMonth = groupByMonth(incomes);
   const expenseByMonth = groupByMonth(expenses);
@@ -113,39 +114,39 @@ export default function Dashboard() {
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} className="col-span-1" />
 
         {/* Carga Fija Total */}
-        <Card className="p-4 flex flex-col gap-2 hover:shadow-lg transition-shadow duration-300">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-medium text-muted-foreground leading-tight">Carga Fija Total</p>
+        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300">
+          <div className="flex items-start justify-between gap-2 min-h-[2.25rem]">
+            <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">Carga Fija Total</p>
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5 text-primary" />
             </div>
           </div>
           <div>
             <p className="text-xl lg:text-2xl font-bold tracking-tight leading-tight break-all">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Planilla + Fijos</p>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-1">
+          <div className="grid grid-cols-2 gap-1 mt-1">
             <div>
-              <div className="flex items-center gap-1 mb-0.5">
+              <div className="flex items-center gap-1">
                 <Receipt className="w-3 h-3 text-primary" />
-                <p className="text-[10px] text-muted-foreground truncate">Planilla</p>
+                <p className="text-[10px] text-muted-foreground">Planilla</p>
               </div>
               <p className="text-xs font-semibold">{formatCurrency(totalPayroll)}</p>
               <p className="text-[10px] text-muted-foreground">{activeWorkers.length} activos</p>
             </div>
             <div>
-              <div className="flex items-center gap-1 mb-0.5">
-                <Receipt className="w-3 h-3 text-primary" />
-                <p className="text-[10px] text-muted-foreground truncate">Gastos Fijos</p>
+              <div className="flex items-center gap-1">
+                <Building2 className="w-3 h-3 text-primary" />
+                <p className="text-[10px] text-muted-foreground truncate">Gasto...</p>
               </div>
               <p className="text-xs font-semibold">{formatCurrency(totalFixedExpenses)}</p>
-              <p className="text-[10px] text-muted-foreground">{fixedExpenses.filter(f => f.status === "activo").length} activos</p>
+              <p className="text-[10px] text-muted-foreground">{activeFixedExpenses.length} activos</p>
             </div>
           </div>
         </Card>
 
-        <StatsCard title="Ingresos del Mes" value={formatCurrency(totalMonthIncome)} icon={TrendingUp} trend="up" trendLabel={`${monthIncomes.length} registros`} />
-        <StatsCard title="Gastos del Mes" value={formatCurrency(totalMonthExpense)} icon={TrendingDown} trend="down" trendLabel={`${monthExpenses.length} registros`} />
+        <StatsCard title="Ingresos del Mes" value={formatCurrency(totalMonthIncome)} subValue={monthIncomes.length} icon={TrendingUp} trend="up" trendLabel={`${monthIncomes.length} registros`} />
+        <StatsCard title="Gastos del Mes" value={formatCurrency(totalMonthExpense)} subValue={monthExpenses.length} icon={TrendingDown} trend="down" trendLabel={`${monthExpenses.length} registros`} />
       </div>
 
       {/* Chart + Summary */}
