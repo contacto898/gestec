@@ -7,13 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 function parseLocalDate(str) {
   if (!str) return new Date();
   const [y, m, d] = str.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
-import { es } from "date-fns/locale";
 
 function formatCurrency(n) {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
@@ -30,6 +30,11 @@ function groupByMonth(items) {
   return months;
 }
 
+const categoryLabels = {
+  planilla: "Planilla", alquiler: "Alquiler", servicios: "Servicios",
+  materiales: "Materiales", transporte: "Transporte", impuestos: "Impuestos", otros: "Otros",
+};
+
 export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState("current");
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list() });
@@ -40,7 +45,6 @@ export default function Dashboard() {
   const now = new Date();
   const currentMonthKey = format(now, "yyyy-MM");
 
-  // Build available months
   const allMonths = [...new Set([
     ...incomes.map(i => i.date?.substring(0, 7)),
     ...expenses.map(e => e.date?.substring(0, 7)),
@@ -51,14 +55,12 @@ export default function Dashboard() {
   const activeWorkers = workers.filter((w) => w.status === "activo");
   const totalPayroll = activeWorkers.reduce((s, w) => s + (w.salary || 0), 0);
 
-  // Month totals
   const monthIncomes = incomes.filter((i) => i.date && i.date.startsWith(activeMonthKey));
   const monthExpenses = expenses.filter((e) => e.date && e.date.startsWith(activeMonthKey));
   const totalMonthIncome = monthIncomes.reduce((s, i) => s + (i.amount || 0), 0);
   const totalMonthExpense = monthExpenses.reduce((s, e) => s + (e.amount || 0), 0);
   const balanceMes = totalMonthIncome - totalMonthExpense;
 
-  // Cumulative (all time)
   const totalAllIncome = incomes.reduce((s, i) => s + (i.amount || 0), 0);
   const totalAllExpense = expenses.reduce((s, e) => s + (e.amount || 0), 0);
   const balanceTotal = totalAllIncome - totalAllExpense;
@@ -73,6 +75,9 @@ export default function Dashboard() {
     Ingresos: incomeByMonth[m] || 0,
     Gastos: expenseByMonth[m] || 0,
   }));
+
+  // Top 5 gastos del mes por monto
+  const topExpenses = [...monthExpenses].sort((a, b) => (b.amount || 0) - (a.amount || 0)).slice(0, 5);
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
@@ -98,11 +103,11 @@ export default function Dashboard() {
         </Select>
       </div>
 
-      {/* Stats row: 2 cols mobile, 4 desktop */}
+      {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} />
 
-        {/* Carga Fija Total — card especial con desglose */}
+        {/* Carga Fija Total */}
         <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium text-muted-foreground">Carga Fija Total</p>
@@ -129,7 +134,7 @@ export default function Dashboard() {
                 <span className="text-[10px] font-medium">Gastos Fijos</span>
               </div>
               <p className="font-bold text-sm">{formatCurrency(totalFixedExpenses)}</p>
-              <p className="text-[10px] text-muted-foreground">{fixedExpenses.filter(f=>f.status==='activo').length} activos</p>
+              <p className="text-[10px] text-muted-foreground">{fixedExpenses.filter(f => f.status === 'activo').length} activos</p>
             </div>
           </div>
         </Card>
@@ -140,26 +145,55 @@ export default function Dashboard() {
 
       {/* Chart + Summary */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <Card className="xl:col-span-2 p-4 lg:p-6 min-w-0 overflow-hidden">
-          <h3 className="font-semibold mb-4">Ingresos vs Gastos por Mes</h3>
-          {chartData.length > 0 ? (
-            <div className="w-full overflow-hidden">
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={chartData} barGap={4} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `S/${v}`} width={60} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))" }} formatter={(v) => formatCurrency(v)} />
-                  <Bar dataKey="Ingresos" fill="hsl(167, 72%, 46%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Gastos" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="h-[260px] flex items-center justify-center text-muted-foreground text-sm">No hay datos para graficar</div>
-          )}
-        </Card>
+        {/* Left column: chart + top gastos */}
+        <div className="xl:col-span-2 space-y-4">
+          <Card className="p-4 lg:p-6 min-w-0 overflow-hidden">
+            <h3 className="font-semibold mb-4">Ingresos vs Gastos por Mes</h3>
+            {chartData.length > 0 ? (
+              <div className="w-full overflow-hidden">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={chartData} barGap={4} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `S/${v}`} width={60} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))" }} formatter={(v) => formatCurrency(v)} />
+                    <Bar dataKey="Ingresos" fill="hsl(167, 72%, 46%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Gastos" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[260px] flex items-center justify-center text-muted-foreground text-sm">No hay datos para graficar</div>
+            )}
+          </Card>
 
+          {/* Top Gastos del Mes */}
+          <Card className="p-4 lg:p-6 min-w-0 overflow-hidden">
+            <h3 className="font-semibold mb-4">Top Gastos del Mes</h3>
+            {topExpenses.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-6">No hay gastos registrados este mes.</p>
+            ) : (
+              <div className="space-y-2">
+                {topExpenses.map((exp, idx) => (
+                  <div key={exp.id} className="flex items-center gap-3">
+                    <span className="w-5 h-5 rounded-full bg-red-100 text-red-600 text-xs font-bold flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{exp.description}</p>
+                      {exp.category && (
+                        <p className="text-xs text-muted-foreground">{categoryLabels[exp.category] || exp.category}</p>
+                      )}
+                    </div>
+                    <span className="font-bold text-red-500 text-sm shrink-0">{formatCurrency(exp.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Right column: resumen financiero */}
         <Card className="p-4 lg:p-6 min-w-0 overflow-hidden">
           <h3 className="font-semibold mb-4">Resumen Financiero</h3>
           <div className="space-y-3">
