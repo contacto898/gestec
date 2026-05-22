@@ -98,11 +98,42 @@ export default function Dashboard() {
         </Select>
       </div>
 
-      {/* Stats row: 2 cols mobile, 3 tablet, 5 desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {/* Stats row: 2 cols mobile, 4 desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} />
-        <StatsCard title="Total Planilla" value={formatCurrency(totalPayroll)} icon={Wallet} trendLabel={`${activeWorkers.length} activos`} />
-        <StatsCard title="Gastos Fijos" value={formatCurrency(totalFixedExpenses)} icon={Receipt} trendLabel={`${fixedExpenses.filter(f=>f.status==='activo').length} activos`} />
+
+        {/* Carga Fija Total — card especial con desglose */}
+        <Card className="p-4 col-span-1">
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground font-medium">Carga Fija Total</p>
+              <p className="text-2xl font-bold mt-1 truncate">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 ml-2">
+              <Wallet className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-2">
+            <div>
+              <div className="flex items-center gap-1 text-muted-foreground mb-0.5">
+                <Wallet className="w-3 h-3" />
+                <span className="text-[10px] font-medium">Total Planilla</span>
+              </div>
+              <p className="font-bold text-sm">{formatCurrency(totalPayroll)}</p>
+              <p className="text-[10px] text-muted-foreground">{activeWorkers.length} activos</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 text-muted-foreground mb-0.5">
+                <Receipt className="w-3 h-3" />
+                <span className="text-[10px] font-medium">Gastos Fijos</span>
+              </div>
+              <p className="font-bold text-sm">{formatCurrency(totalFixedExpenses)}</p>
+              <p className="text-[10px] text-muted-foreground">{fixedExpenses.filter(f=>f.status==='activo').length} activos</p>
+            </div>
+          </div>
+        </Card>
+
         <StatsCard title="Ingresos del Mes" value={formatCurrency(totalMonthIncome)} icon={TrendingUp} trend="up" trendLabel={`${monthIncomes.length} registros`} />
         <StatsCard title="Gastos del Mes" value={formatCurrency(totalMonthExpense)} icon={TrendingDown} trend="down" trendLabel={`${monthExpenses.length} registros`} />
       </div>
