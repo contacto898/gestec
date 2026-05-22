@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, Building2, Calendar, LayoutGrid, CheckCircle, Tag, Filter } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -270,7 +271,17 @@ export default function FixedExpenses() {
   const [view, setView] = useState("list");
   const [paidToday, setPaidToday] = useState(() => getPaidToday("gastos_fijos"));
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [confirmState, setConfirmState] = useState(null);
   const qc = useQueryClient();
+
+  const handleDelete = (id) => {
+    const item = fixedExpenses.find(f => f.id === id);
+    setConfirmState({
+      title: "¿Eliminar gasto fijo?",
+      description: `Se eliminará "${item?.description || id}" (${item?.company || ""}). Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteMut.mutate(id),
+    });
+  };
 
   const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list("-created_date") });
   const { data: categories = [] } = useQuery({ queryKey: ["fixedExpCats"], queryFn: () => base44.entities.FixedExpenseCategory.list() });
@@ -397,7 +408,7 @@ export default function FixedExpenses() {
               {filteredExpenses.map((item) => (
                 <FixedExpenseRow key={item.id} item={item} payments={payments}
                   onEdit={(i) => { setEditing(i); setFormOpen(true); }}
-                  onDelete={(id) => deleteMut.mutate(id)}
+                  onDelete={handleDelete}
                   onPay={(i) => setPayItem(i)}
                   paidToday={paidToday} />
               ))}
@@ -432,7 +443,7 @@ export default function FixedExpenses() {
                     {items.map((item) => (
                       <FixedExpenseRow key={item.id} item={item} payments={payments}
                         onEdit={(i) => { setEditing(i); setFormOpen(true); }}
-                        onDelete={(id) => deleteMut.mutate(id)}
+                        onDelete={handleDelete}
                         onPay={(i) => setPayItem(i)}
                         paidToday={paidToday} />
                     ))}
@@ -455,6 +466,15 @@ export default function FixedExpenses() {
       {payItem && (
         <PayDialog open={!!payItem} onClose={() => setPayItem(null)} item={payItem} onConfirmPay={handleConfirmPay} />
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(o) => { if (!o) setConfirmState(null); }}
+        title={confirmState?.title}
+        description={confirmState?.description}
+        onConfirm={() => { confirmState?.onConfirm(); setConfirmState(null); }}
+        confirmLabel="Eliminar"
+        destructive
+      />
     </div>
   );
 }

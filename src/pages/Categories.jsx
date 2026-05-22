@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Tag } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -148,7 +149,17 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete }) {
 export default function Categories() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [confirmState, setConfirmState] = useState(null);
   const qc = useQueryClient();
+
+  const handleDelete = (id) => {
+    const cat = categories.find(c => c.id === id);
+    setConfirmState({
+      title: "¿Eliminar categoría?",
+      description: `Se eliminará la categoría "${cat?.name || id}". Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteMut.mutate(id),
+    });
+  };
 
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: () => base44.entities.Category.list() });
   const { data: incomes = [] } = useQuery({ queryKey: ["incomes"], queryFn: () => base44.entities.Income.list() });
@@ -205,7 +216,7 @@ export default function Categories() {
             incomeCategories.map((cat) => (
               <CategoryCard key={cat.id} category={cat} incomes={incomes} expenses={expenses}
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
-                onDelete={(id) => deleteMut.mutate(id)}
+                onDelete={handleDelete}
               />
             ))
           )}
@@ -225,7 +236,7 @@ export default function Categories() {
             expenseCategories.map((cat) => (
               <CategoryCard key={cat.id} category={cat} incomes={incomes} expenses={expenses}
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
-                onDelete={(id) => deleteMut.mutate(id)}
+                onDelete={handleDelete}
               />
             ))
           )}
@@ -233,6 +244,15 @@ export default function Categories() {
       </Tabs>
 
       <CategoryForm open={formOpen} onClose={() => { setFormOpen(false); setEditing(null); }} onSubmit={handleSubmit} editing={editing} />
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(o) => { if (!o) setConfirmState(null); }}
+        title={confirmState?.title}
+        description={confirmState?.description}
+        onConfirm={() => { confirmState?.onConfirm(); setConfirmState(null); }}
+        confirmLabel="Eliminar"
+        destructive
+      />
     </div>
   );
 }

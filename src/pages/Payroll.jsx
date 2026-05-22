@@ -8,6 +8,7 @@ import VacationReport from "@/components/payroll/VacationReport";
 import PayrollForm from "@/components/payroll/PayrollForm";
 import PayrollTable from "@/components/payroll/PayrollTable";
 import { getPaidToday, addPaidToday } from "@/lib/paidToday";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 function getTodayLocal() {
   const d = new Date();
@@ -22,7 +23,17 @@ export default function Payroll() {
   const [editing, setEditing] = useState(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [vacPaidToday, setVacPaidToday] = useState(() => getPaidToday("vacaciones"));
+  const [confirmState, setConfirmState] = useState(null);
   const qc = useQueryClient();
+
+  const handleDeleteWorker = (id) => {
+    const worker = workers.find(w => w.id === id);
+    setConfirmState({
+      title: "¿Eliminar trabajador?",
+      description: `Se eliminará a "${worker?.name || "este trabajador"}" de la planilla. Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteWorker.mutate(id),
+    });
+  };
 
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list("-created_date") });
   const { data: deductions = [] } = useQuery({ queryKey: ["deductions"], queryFn: () => base44.entities.Deduction.list() });
@@ -187,7 +198,7 @@ export default function Payroll() {
         workers={workers}
         deductions={deductions}
         onEdit={(w) => { setEditing(w); setFormOpen(true); }}
-        onDelete={(id) => deleteWorker.mutate(id)}
+        onDelete={handleDeleteWorker}
         onPay={handlePay}
         onVacation={handleVacation}
         onUseAccumulated={handleUseAccumulated}
@@ -201,6 +212,16 @@ export default function Payroll() {
         onClose={() => { setFormOpen(false); setEditing(null); }}
         onSubmit={handleSubmit}
         editingWorker={editing}
+      />
+
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(o) => { if (!o) setConfirmState(null); }}
+        title={confirmState?.title}
+        description={confirmState?.description}
+        onConfirm={() => { confirmState?.onConfirm(); setConfirmState(null); }}
+        confirmLabel="Eliminar"
+        destructive
       />
     </div>
     </PullToRefresh>

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, User, Calendar, CreditCard, Minus, Filter } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -212,7 +213,17 @@ export default function Deductions() {
   const [formType, setFormType] = useState("descuento");
   const [editing, setEditing] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [confirmState, setConfirmState] = useState(null);
   const qc = useQueryClient();
+
+  const handleDelete = (id) => {
+    const item = deductions.find(d => d.id === id);
+    setConfirmState({
+      title: `¿Eliminar ${item?.type === "descuento" ? "descuento" : "adelanto"}?`,
+      description: `Se eliminará "${item?.concept || id}" de ${item?.worker_name || ""}. Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteMut.mutate(id),
+    });
+  };
 
   const { data: deductions = [] } = useQuery({ queryKey: ["deductions"], queryFn: () => base44.entities.Deduction.list("-created_date") });
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list() });
@@ -305,17 +316,26 @@ export default function Deductions() {
         <TabsContent value="descuentos" className="space-y-3">
           {descuentos.length === 0
             ? <Card className="p-12 text-center text-muted-foreground">No hay descuentos registrados</Card>
-            : descuentos.map((d) => <DeductionCard key={d.id} item={d} onEdit={handleEdit} onDelete={(id) => deleteMut.mutate(id)} />)}
+            : descuentos.map((d) => <DeductionCard key={d.id} item={d} onEdit={handleEdit} onDelete={handleDelete} />)}
         </TabsContent>
         <TabsContent value="adelantos" className="space-y-3">
           {adelantos.length === 0
             ? <Card className="p-12 text-center text-muted-foreground">No hay adelantos registrados</Card>
-            : adelantos.map((d) => <DeductionCard key={d.id} item={d} onEdit={handleEdit} onDelete={(id) => deleteMut.mutate(id)} />)}
+            : adelantos.map((d) => <DeductionCard key={d.id} item={d} onEdit={handleEdit} onDelete={handleDelete} />)}
         </TabsContent>
       </Tabs>
 
       <DeductionForm open={formOpen} onClose={() => { setFormOpen(false); setEditing(null); }}
         onSubmit={handleSubmit} editing={editing} workers={workers} type={formType} />
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(o) => { if (!o) setConfirmState(null); }}
+        title={confirmState?.title}
+        description={confirmState?.description}
+        onConfirm={() => { confirmState?.onConfirm(); setConfirmState(null); }}
+        confirmLabel="Eliminar"
+        destructive
+      />
     </div>
   );
 }
