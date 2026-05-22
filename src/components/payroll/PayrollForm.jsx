@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileSelect from "@/components/ui/MobileSelect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const INITIAL = { name: "", position: "", salary: "", payment_type: "mensual", payment_date: "", hire_date: "", status: "activo", has_vacations: true, vacation_paid_date: "" };
@@ -48,14 +48,12 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
             </div>
             <div className="space-y-2">
               <Label>Tipo de pago</Label>
-              <Select value={form.payment_type} onValueChange={(v) => setForm({ ...form, payment_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mensual">Mensual</SelectItem>
-                  <SelectItem value="quincenal">Quincenal</SelectItem>
-                  <SelectItem value="semanal">Semanal</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.payment_type}
+                onValueChange={(v) => setForm({ ...form, payment_type: v })}
+                options={[{ value: "mensual", label: "Mensual" }, { value: "quincenal", label: "Quincenal" }, { value: "semanal", label: "Semanal" }]}
+                label="Tipo de pago"
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -97,13 +95,12 @@ export default function PayrollForm({ open, onClose, onSubmit, editingWorker }) 
 
           <div className="space-y-2">
             <Label>Estado</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="inactivo">Inactivo</SelectItem>
-              </SelectContent>
-            </Select>
+            <MobileSelect
+              value={form.status}
+              onValueChange={(v) => setForm({ ...form, status: v })}
+              options={[{ value: "activo", label: "Activo" }, { value: "inactivo", label: "Inactivo" }]}
+              label="Estado"
+            />
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>

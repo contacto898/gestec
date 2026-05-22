@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "./Sidebar";
@@ -26,6 +26,18 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const isRoot = ROOT_PATHS.includes(location.pathname);
+  const mainRef = useRef(null);
+  const scrollPositions = useRef({});
+  const prevPathname = useRef(location.pathname);
+
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    scrollPositions.current[prevPathname.current] = main.scrollTop;
+    const saved = scrollPositions.current[location.pathname] || 0;
+    requestAnimationFrame(() => { main.scrollTop = saved; });
+    prevPathname.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -78,7 +90,7 @@ export default function AppLayout() {
           )}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-[calc(1rem+env(safe-area-inset-bottom)+64px)] lg:pb-6 relative">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-4 lg:p-6 pb-[calc(1rem+env(safe-area-inset-bottom)+64px)] lg:pb-6 relative">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

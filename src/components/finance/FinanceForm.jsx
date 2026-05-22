@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileSelect from "@/components/ui/MobileSelect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -74,25 +74,23 @@ export default function FinanceForm({ open, onClose, onSubmit, type, editing }) 
           </div>
           <div className="space-y-2">
             <Label>Categoría</Label>
-            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecciona categoría" /></SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MobileSelect
+              value={form.category}
+              onValueChange={(v) => setForm({ ...form, category: v })}
+              options={categories}
+              placeholder="Selecciona categoría"
+              label="Categoría"
+            />
           </div>
           {type === "expense" && (
             <div className="space-y-2">
               <Label>Tipo de pago</Label>
-              <Select value={form.payment_method || "efectivo"} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
-                <SelectTrigger><SelectValue placeholder="Tipo de pago" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="efectivo">💵 Efectivo</SelectItem>
-                  <SelectItem value="transferencia">🏦 Transferencia</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.payment_method || "efectivo"}
+                onValueChange={(v) => setForm({ ...form, payment_method: v })}
+                options={[{ value: "efectivo", label: "💵 Efectivo" }, { value: "transferencia", label: "🏦 Transferencia" }]}
+                label="Tipo de pago"
+              />
             </div>
           )}
           <div className="flex justify-end gap-3 pt-2">

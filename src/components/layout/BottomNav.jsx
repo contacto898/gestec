@@ -1,4 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+
+// Module-level memory: persists across re-renders, resets on full page reload
+const tabPathMemory = new Map();
 import { LayoutDashboard, Users, TrendingUp, CreditCard, ListChecks } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -13,6 +17,18 @@ export default function BottomNav() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
+  // Keep track of the last visited path per tab root
+  useEffect(() => {
+    const match = NAV_ITEMS.find(
+      (item) => pathname === item.to || pathname.startsWith(item.to === "/" ? "/___never___" : item.to + "/")
+    ) || (pathname === "/" ? NAV_ITEMS[0] : null);
+    if (match) tabPathMemory.set(match.to, pathname);
+  }, [pathname]);
+
+  const handleTabPress = (to) => {
+    navigate(tabPathMemory.get(to) || to);
+  };
+
   return (
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t"
@@ -25,7 +41,7 @@ export default function BottomNav() {
             <button
               key={to}
               type="button"
-              onClick={() => navigate(to)}
+              onClick={() => handleTabPress(to)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] select-none transition-colors ${
                 active
                   ? "text-primary"

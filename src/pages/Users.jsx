@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Shield, UserPlus, Users, Eye, EyeOff, KeyRound, UserX } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 const ALL_PERMISSIONS = [
   { id: "dashboard", label: "Dashboard" },
@@ -319,6 +320,7 @@ export default function UsersPage() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const qc = useQueryClient();
 
@@ -428,9 +430,11 @@ export default function UsersPage() {
                           onClick={() => {
                             const newRole = u.role === "admin" ? "user" : "admin";
                             const label = newRole === "admin" ? "Administrador" : "Usuario";
-                            if (window.confirm(`¿Cambiar el rol de ${u.full_name || u.email} a "${label}"?`)) {
-                              updateUserRole.mutate({ id: u.id, role: newRole });
-                            }
+                            setConfirmState({
+                              title: "Cambiar rol de usuario",
+                              description: `¿Cambiar el rol de ${u.full_name || u.email} a "${label}"?`,
+                              onConfirm: () => updateUserRole.mutate({ id: u.id, role: newRole }),
+                            });
                           }}
                         >
                           {u.role === "admin" ? "Quitar admin" : "Hacer admin"}
@@ -510,6 +514,14 @@ export default function UsersPage() {
       <CreateUserDialog open={createUserOpen} onClose={() => setCreateUserOpen(false)} />
       <ChangePasswordDialog open={changePassOpen} onClose={() => setChangePassOpen(false)} />
       <DeleteAccountDialog open={deleteAccountOpen} onClose={() => setDeleteAccountOpen(false)} currentUser={currentUser} />
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(o) => { if (!o) setConfirmState(null); }}
+        title={confirmState?.title}
+        description={confirmState?.description}
+        onConfirm={() => { confirmState?.onConfirm(); setConfirmState(null); }}
+        confirmLabel="Confirmar"
+      />
     </div>
   );
 }

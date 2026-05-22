@@ -329,7 +329,7 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
         </div>
         <div className="flex flex-col gap-1 shrink-0">
           <Button size="sm" onClick={canPay ? () => onPayClick(w) : undefined} disabled={!canPay}
-            className={`gap-1 h-7 px-2 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : !payDue ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"}`}
+            className={`gap-1 h-11 px-3 text-xs ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : !payDue ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"}`}
             title={nextPayDate ? `Próximo pago: ${format(nextPayDate, "dd MMM yyyy", { locale: es })}` : ""}>
             <DollarSign className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : !payDue ? "Pendiente" : "Pagar"}
           </Button>
@@ -338,19 +338,19 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
           )}
           {vacStatus && (
             <Button size="sm" onClick={alreadyVacPaid ? undefined : () => onVacClick(w)} disabled={alreadyVacPaid}
-              className={`gap-1 h-7 px-2 text-xs ${alreadyVacPaid ? "bg-amber-700 hover:bg-amber-700 cursor-not-allowed opacity-80" : "bg-amber-500 hover:bg-amber-600"}`}>
+              className={`gap-1 h-11 px-3 text-xs ${alreadyVacPaid ? "bg-amber-700 hover:bg-amber-700 cursor-not-allowed opacity-80" : "bg-amber-500 hover:bg-amber-600"}`}>
               <Palmtree className="w-3.5 h-3.5" /> {alreadyVacPaid ? "Pagado" : "Vac."}
             </Button>
           )}
           {!vacStatus && (w.accumulated_vacation_days > 0) && (
             <Button size="sm" onClick={() => onAccumClick(w)}
-              className="gap-1 h-7 px-2 text-xs bg-orange-500 hover:bg-orange-600">
+              className="gap-1 h-11 px-3 text-xs bg-orange-500 hover:bg-orange-600">
               <Palmtree className="w-3.5 h-3.5" /> {w.accumulated_vacation_days}d
             </Button>
           )}
           <div className="flex gap-1 justify-end">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(w.id)}><Trash2 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => onEdit(w)}><Pencil className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive" onClick={() => onDelete(w.id)}><Trash2 className="w-4 h-4" /></Button>
           </div>
         </div>
       </div>

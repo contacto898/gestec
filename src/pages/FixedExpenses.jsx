@@ -5,7 +5,7 @@ import { getPaidToday, addPaidToday } from "@/lib/paidToday";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileSelect from "@/components/ui/MobileSelect";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +56,7 @@ function CategoryManager({ open, onClose }) {
                   <Tag className="w-4 h-4 text-primary" />
                   <span className="font-medium text-sm">{c.name}</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive"
                   onClick={() => deleteCat.mutate(c.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
               </div>
             ))}
@@ -164,34 +164,35 @@ function FixedExpenseForm({ open, onClose, onSubmit, editing, categories }) {
             </div>
             <div className="space-y-2">
               <Label>Frecuencia</Label>
-              <Select value={form.frequency} onValueChange={(v) => setForm({ ...form, frequency: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(freqLabels).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={form.frequency}
+                onValueChange={(v) => setForm({ ...form, frequency: v })}
+                options={Object.entries(freqLabels).map(([v, l]) => ({ value: v, label: l }))}
+                label="Frecuencia"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Categoría</Label>
-            <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-              <SelectTrigger><SelectValue placeholder="Selecciona categoría" /></SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                {categories.length === 0 && <SelectItem value="Sin categoría">Sin categoría</SelectItem>}
-              </SelectContent>
-            </Select>
+            <MobileSelect
+              value={form.category}
+              onValueChange={(v) => setForm({ ...form, category: v })}
+              options={[
+                ...(categories.length === 0 ? [{ value: "Sin categoría", label: "Sin categoría" }] : []),
+                ...categories.map((c) => ({ value: c.name, label: c.name })),
+              ]}
+              placeholder="Selecciona categoría"
+              label="Categoría"
+            />
           </div>
           <div className="space-y-2">
             <Label>Estado</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="pausado">Pausado</SelectItem>
-                <SelectItem value="cancelado">Cancelado</SelectItem>
-              </SelectContent>
-            </Select>
+            <MobileSelect
+              value={form.status}
+              onValueChange={(v) => setForm({ ...form, status: v })}
+              options={[{ value: "activo", label: "Activo" }, { value: "pausado", label: "Pausado" }, { value: "cancelado", label: "Cancelado" }]}
+              label="Estado"
+            />
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
@@ -249,11 +250,11 @@ function FixedExpenseRow({ item, payments, onEdit, onDelete, onPay, paidToday = 
           <Button size="sm"
             onClick={alreadyPaid ? undefined : () => onPay(item)}
             disabled={alreadyPaid}
-            className={`h-7 px-2 text-xs gap-1 ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
+            className={`h-11 sm:h-8 px-3 text-xs gap-1 ${alreadyPaid ? "bg-red-500 hover:bg-red-500 cursor-not-allowed opacity-80" : "bg-emerald-600 hover:bg-emerald-700"}`}>
             <CheckCircle className="w-3.5 h-3.5" /> {alreadyPaid ? "Pagado" : "Pagar"}
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(item)}><Pencil className="w-4 h-4" /></Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(item.id)}><Trash2 className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8" onClick={() => onEdit(item)}><Pencil className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 text-destructive hover:text-destructive" onClick={() => onDelete(item.id)}><Trash2 className="w-4 h-4" /></Button>
         </div>
       </div>
     </div>
@@ -373,19 +374,17 @@ export default function FixedExpenses() {
         </div>
         <div className="flex items-center gap-2 ml-auto">
           <Filter className="w-4 h-4 text-muted-foreground" />
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-44 h-8 text-sm">
-              <SelectValue placeholder="Todos los meses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los meses</SelectItem>
-              {allMonths.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MobileSelect
+            value={selectedMonth}
+            onValueChange={setSelectedMonth}
+            options={[
+              { value: "all", label: "Todos los meses" },
+              ...allMonths.map((m) => ({ value: m, label: format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es }) })),
+            ]}
+            placeholder="Todos los meses"
+            label="Filtrar por mes"
+            triggerClassName="w-44 h-8 text-sm"
+          />
         </div>
       </div>
 
