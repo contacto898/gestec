@@ -171,6 +171,42 @@ export default function Payroll() {
     });
   };
 
+  const handleDeleteVacRecord = async (record) => {
+    // 1. Eliminar el registro
+    await base44.entities.VacationRecord.delete(record.id);
+
+    // 2. Si hubo pago, eliminar el gasto correspondiente
+    if (record.amount_paid > 0) {
+      const expenses = await base44.entities.Expense.filter({ category: "planilla" });
+      const match = expenses.find(
+        (e) => e.date === record.record_date &&
+          Math.abs(e.amount - record.amount_paid) < 0.01 &&
+          e.description?.includes(record.worker_name)
+      );
+      if (match) await base44.entities.Expense.delete(match.id);
+    }
+
+    // 3. Revertir días acumulados del trabajador
+    const worker = workers.find((w) => w.id === record.worker_id);
+    if (worker) {
+      const prevAccumulated = Math.max(0, (record.total_days_available || 15) - 15);
+      // Buscar el registro anterior para restaurar vacation_paid_date
+      const allRecords = await base44.entities.VacationRecord.filter({ worker_id: record.worker_id });
+      const prevRecord = allRecords
+        .filter((r) => r.id !== record.id && r.record_date <= record.record_date)
+        .sort((a, b) => b.record_date.localeCompare(a.record_date))[0];
+      const prevVacDate = prevRecord ? (prevRecord.vac_start_date || prevRecord.record_date) : null;
+      await base44.entities.Worker.update(worker.id, {
+        accumulated_vacation_days: prevAccumulated,
+        vacation_paid_date: prevVacDate,
+      });
+    }
+
+    qc.invalidateQueries({ queryKey: ["vacation_records"] });
+    qc.invalidateQueries({ queryKey: ["workers"] });
+    qc.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
+  };
+
   const handleRefresh = () => {
     qc.invalidateQueries({ queryKey: ["workers"], refetchType: "all" });
     qc.invalidateQueries({ queryKey: ["deductions"], refetchType: "all" });
@@ -205,7 +241,7 @@ export default function Payroll() {
         vacPaidToday={vacPaidToday}
       />
 
-      <VacationReport open={reportOpen} onClose={() => setReportOpen(false)} workers={workers} />
+      <VacationReport open={reportOpen} onClose={() => setReportOpen(false)} workers={workers} onDeleteRecord={handleDeleteVacRecord} />
 
       <PayrollForm
         open={formOpen}
