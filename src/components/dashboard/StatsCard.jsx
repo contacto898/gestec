@@ -5,7 +5,7 @@ export default function StatsCard({ title, value, subValue, icon: Icon, trend, t
   return (
     <Card className={cn("p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300", className)}>
       <div className="flex items-start justify-between gap-2 min-h-[2.25rem]">
-        <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">{title}</p>
+        <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2 break-words min-w-0">{title}</p>
         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <Icon className="w-5 h-5 text-primary" />
         </div>
