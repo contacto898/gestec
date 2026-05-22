@@ -113,34 +113,19 @@ export default function Dashboard() {
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} className="col-span-1" />
 
         {/* Carga Fija Total */}
-        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300 col-span-1">
+        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium text-muted-foreground">Carga Fija Total</p>
+            <p className="text-sm font-medium text-muted-foreground leading-tight">Carga Fija Total</p>
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5 text-primary" />
             </div>
           </div>
           <div>
-            <p className="text-lg lg:text-2xl font-bold tracking-tight break-all">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
+            <p className="text-xl lg:text-2xl font-bold tracking-tight leading-tight">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
             <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
           </div>
-          <div className="hidden sm:grid grid-cols-2 gap-2">
-            <div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Wallet className="w-3 h-3" />
-                <span className="text-[10px] font-medium">Total Planilla</span>
-              </div>
-              <p className="font-bold text-sm">{formatCurrency(totalPayroll)}</p>
-              <p className="text-[10px] text-muted-foreground">{activeWorkers.length} activos</p>
-            </div>
-            <div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Receipt className="w-3 h-3" />
-                <span className="text-[10px] font-medium">Gastos Fijos</span>
-              </div>
-              <p className="font-bold text-sm">{formatCurrency(totalFixedExpenses)}</p>
-              <p className="text-[10px] text-muted-foreground">{fixedExpenses.filter(f => f.status === 'activo').length} activos</p>
-            </div>
+          <div className="h-4">
+            <p className="text-xs text-muted-foreground">{activeWorkers.length} trabajadores activos</p>
           </div>
         </Card>
 
