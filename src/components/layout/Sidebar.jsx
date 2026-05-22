@@ -27,13 +27,11 @@ export default function Sidebar({ open, onClose }) {
       )}>
         <div className="flex items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">GT</span>
-            </div>
-            <div>
-              <h1 className="font-bold text-base tracking-tight">Gestec</h1>
-              <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Sistema</p>
-            </div>
+            <img
+              src="https://media.base44.com/images/public/6a0fc6d97f097abb7c26119e/2206e58b8_d49377bb-cc09-42b6-89a3-836b8aaf8960.png"
+              alt="GesTec"
+              className="h-10 w-auto object-contain"
+            />
           </div>
           <button onClick={onClose} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
             <X className="w-5 h-5" />

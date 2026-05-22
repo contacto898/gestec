@@ -67,9 +67,13 @@ export default function AppLayout() {
             </Button>
           )}
 
-          {/* Mobile: page title */}
-          <div className="flex-1 min-w-0 lg:hidden">
-            <span className="text-sm font-semibold truncate">{PAGE_TITLES[location.pathname] || "GesTec"}</span>
+          {/* Mobile: logo */}
+          <div className="flex-1 min-w-0 lg:hidden flex items-center">
+            <img
+              src="https://media.base44.com/images/public/6a0fc6d97f097abb7c26119e/2206e58b8_d49377bb-cc09-42b6-89a3-836b8aaf8960.png"
+              alt="GesTec"
+              className="h-7 w-auto object-contain"
+            />
           </div>
           <div className="flex-1 min-w-0 hidden lg:block" />
 
