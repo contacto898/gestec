@@ -186,24 +186,33 @@ export default function Payroll() {
       if (match) await base44.entities.Expense.delete(match.id);
     }
 
-    // 3. Revertir días acumulados del trabajador
+    // 3. Calcular estado previo
     const worker = workers.find((w) => w.id === record.worker_id);
+    const prevAccumulated = Math.max(0, (record.total_days_available || 15) - 15);
+    const allRecords = await base44.entities.VacationRecord.filter({ worker_id: record.worker_id });
+    const prevRecord = allRecords
+      .filter((r) => r.record_date < record.record_date)
+      .sort((a, b) => b.record_date.localeCompare(a.record_date))[0];
+    const prevVacDate = prevRecord ? (prevRecord.vac_start_date || prevRecord.record_date) : null;
+
     if (worker) {
-      const prevAccumulated = Math.max(0, (record.total_days_available || 15) - 15);
-      // Buscar el registro anterior para restaurar vacation_paid_date
-      const allRecords = await base44.entities.VacationRecord.filter({ worker_id: record.worker_id });
-      const prevRecord = allRecords
-        .filter((r) => r.id !== record.id && r.record_date <= record.record_date)
-        .sort((a, b) => b.record_date.localeCompare(a.record_date))[0];
-      const prevVacDate = prevRecord ? (prevRecord.vac_start_date || prevRecord.record_date) : null;
       await base44.entities.Worker.update(worker.id, {
         accumulated_vacation_days: prevAccumulated,
         vacation_paid_date: prevVacDate,
       });
+      // Actualizar cache inmediatamente para evitar desfase visual
+      qc.setQueryData(["workers"], (old) =>
+        old?.map((w) => w.id === worker.id
+          ? { ...w, accumulated_vacation_days: prevAccumulated, vacation_paid_date: prevVacDate }
+          : w
+        )
+      );
     }
 
+    // 4. Limpiar estado de pago del día
     removePaidToday("vacaciones", record.worker_id);
     setVacPaidToday(getPaidToday("vacaciones"));
+
     qc.invalidateQueries({ queryKey: ["vacation_records"] });
     qc.invalidateQueries({ queryKey: ["workers"] });
     qc.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
