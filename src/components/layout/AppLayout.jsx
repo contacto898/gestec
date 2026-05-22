@@ -67,13 +67,14 @@ export default function AppLayout() {
             </Button>
           )}
 
-          {/* Mobile: logo */}
-          <div className="flex-1 min-w-0 lg:hidden flex items-center">
+          {/* Mobile: logo + name */}
+          <div className="flex-1 min-w-0 lg:hidden flex items-center gap-2">
             <img
               src="https://media.base44.com/images/public/6a0fc6d97f097abb7c26119e/2206e58b8_d49377bb-cc09-42b6-89a3-836b8aaf8960.png"
               alt="GesTec"
               className="h-7 w-auto object-contain"
             />
+            <span className="font-bold text-sm tracking-tight">GesTec</span>
           </div>
           <div className="flex-1 min-w-0 hidden lg:block" />
 

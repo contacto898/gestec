@@ -32,6 +32,10 @@ export default function Sidebar({ open, onClose }) {
               alt="GesTec"
               className="h-10 w-auto object-contain"
             />
+            <div>
+              <h1 className="font-bold text-base tracking-tight">GesTec</h1>
+              <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Sistema</p>
+            </div>
           </div>
           <button onClick={onClose} className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground">
             <X className="w-5 h-5" />
