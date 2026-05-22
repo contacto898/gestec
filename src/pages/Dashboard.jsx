@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import PullToRefresh from "@/components/ui/PullToRefresh";
+import MobileSelect from "@/components/ui/MobileSelect";
 import StatsCard from "@/components/dashboard/StatsCard";
 import { Users, TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,10 +39,13 @@ const categoryLabels = {
 
 export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState("current");
+  const queryClient = useQueryClient();
   const { data: workers = [] } = useQuery({ queryKey: ["workers"], queryFn: () => base44.entities.Worker.list() });
   const { data: incomes = [] } = useQuery({ queryKey: ["incomes"], queryFn: () => base44.entities.Income.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
   const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list() });
+
+  const handleRefresh = () => queryClient.invalidateQueries({ refetchType: "all" });
 
   const now = new Date();
   const currentMonthKey = format(now, "yyyy-MM");
@@ -79,8 +84,14 @@ export default function Dashboard() {
   // Top 5 gastos del mes por monto
   const topExpenses = [...monthExpenses].sort((a, b) => (b.amount || 0) - (a.amount || 0)).slice(0, 5);
 
+  const monthOptions = [
+    { value: "current", label: "Mes actual" },
+    ...allMonths.map((m) => ({ value: m, label: format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es }) })),
+  ];
+
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto">
+    <PullToRefresh onRefresh={handleRefresh}>
+    <div className="space-y-6 w-full max-w-7xl mx-auto p-4 lg:p-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -88,19 +99,13 @@ export default function Dashboard() {
             Resumen financiero — {format(parseLocalDate(activeMonthKey + "-02"), "MMMM yyyy", { locale: es })}
           </p>
         </div>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="current">Mes actual</SelectItem>
-            {allMonths.map((m) => (
-              <SelectItem key={m} value={m}>
-                {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MobileSelect
+          value={selectedMonth}
+          onValueChange={setSelectedMonth}
+          options={monthOptions}
+          label="Seleccionar mes"
+          triggerClassName="w-48"
+        />
       </div>
 
       {/* Stats row */}
@@ -242,5 +247,6 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
+    </PullToRefresh>
   );
 }

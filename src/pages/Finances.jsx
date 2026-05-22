@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PullToRefresh from "@/components/ui/PullToRefresh";
+import MobileSelect from "@/components/ui/MobileSelect";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, TrendingUp, TrendingDown, Banknote } from "lucide-react";
 import FinanceForm from "@/components/finance/FinanceForm";
@@ -334,8 +335,19 @@ export default function Finances() {
     ? expenses
     : expenses.filter((e) => e.date?.startsWith(selectedMonth));
 
+  const monthOptions = [
+    { value: "all", label: "Todos los meses" },
+    ...allMonths.map((m) => ({ value: m, label: format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es }) })),
+  ];
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
+    queryClient.invalidateQueries({ queryKey: ["incomes"], refetchType: "all" });
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <PullToRefresh onRefresh={handleRefresh}>
+    <div className="space-y-6 max-w-7xl mx-auto p-4 lg:p-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Ingresos y Gastos</h1>
@@ -354,19 +366,14 @@ export default function Finances() {
       {/* Month filter */}
       <div className="flex items-center gap-3">
         <span className="text-sm font-medium text-muted-foreground">Filtrar por mes:</span>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Todos los meses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los meses</SelectItem>
-            {allMonths.map((m) => (
-              <SelectItem key={m} value={m}>
-                {format(parseLocalDate(m + "-02"), "MMMM yyyy", { locale: es })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <MobileSelect
+          value={selectedMonth}
+          onValueChange={setSelectedMonth}
+          options={monthOptions}
+          placeholder="Todos los meses"
+          label="Filtrar por mes"
+          triggerClassName="w-48"
+        />
       </div>
 
       {/* Recuadro: Gastos en efectivo del día */}
@@ -430,5 +437,6 @@ export default function Finances() {
         editing={editing}
       />
     </div>
+    </PullToRefresh>
   );
 }

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, TrendingUp, CreditCard, ListChecks } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   return (
     <nav
@@ -21,9 +22,10 @@ export default function BottomNav() {
         {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
           const active = pathname === to;
           return (
-            <Link
+            <button
               key={to}
-              to={to}
+              type="button"
+              onClick={() => navigate(to)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] select-none transition-colors ${
                 active
                   ? "text-primary"
@@ -35,7 +37,7 @@ export default function BottomNav() {
               {active && (
                 <span className="absolute bottom-0 w-6 h-0.5 rounded-full bg-primary" style={{ position: "static", display: "block", marginTop: "1px" }} />
               )}
-            </Link>
+            </button>
           );
         })}
       </div>

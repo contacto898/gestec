@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import PullToRefresh from "@/components/ui/PullToRefresh";
 import { Button } from "@/components/ui/button";
 import { Plus, Palmtree } from "lucide-react";
 import VacationReport from "@/components/payroll/VacationReport";
@@ -159,8 +160,14 @@ export default function Payroll() {
     });
   };
 
+  const handleRefresh = () => {
+    qc.invalidateQueries({ queryKey: ["workers"], refetchType: "all" });
+    qc.invalidateQueries({ queryKey: ["deductions"], refetchType: "all" });
+  };
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <PullToRefresh onRefresh={handleRefresh}>
+    <div className="space-y-6 max-w-7xl mx-auto p-4 lg:p-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Planilla</h1>
@@ -196,5 +203,6 @@ export default function Payroll() {
         editingWorker={editing}
       />
     </div>
+    </PullToRefresh>
   );
 }
