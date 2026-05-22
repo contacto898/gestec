@@ -103,20 +103,20 @@ export default function Dashboard() {
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} />
 
         {/* Carga Fija Total — card especial con desglose */}
-        <Card className="p-4 col-span-1">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground font-medium">Carga Fija Total</p>
-              <p className="text-2xl font-bold mt-1 truncate">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 ml-2">
-              <Wallet className="w-4 h-4 text-primary" />
+        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium text-muted-foreground">Carga Fija Total</p>
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Wallet className="w-5 h-5 text-primary" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-2xl lg:text-3xl font-bold tracking-tight">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <div className="flex items-center gap-1 text-muted-foreground mb-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
                 <Wallet className="w-3 h-3" />
                 <span className="text-[10px] font-medium">Total Planilla</span>
               </div>
@@ -124,7 +124,7 @@ export default function Dashboard() {
               <p className="text-[10px] text-muted-foreground">{activeWorkers.length} activos</p>
             </div>
             <div>
-              <div className="flex items-center gap-1 text-muted-foreground mb-0.5">
+              <div className="flex items-center gap-1 text-muted-foreground">
                 <Receipt className="w-3 h-3" />
                 <span className="text-[10px] font-medium">Gastos Fijos</span>
               </div>
