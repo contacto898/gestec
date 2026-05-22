@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-export default function StatsCard({ title, value, icon: Icon, trend, trendLabel, className }) {
+export default function StatsCard({ title, value, subValue, icon: Icon, trend, trendLabel, className }) {
   return (
     <Card className={cn("p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300", className)}>
       <div className="flex items-start justify-between gap-2 min-h-[2.25rem]">
@@ -12,6 +12,9 @@ export default function StatsCard({ title, value, icon: Icon, trend, trendLabel,
       </div>
       <div>
         <p className="text-xl lg:text-2xl font-bold tracking-tight leading-tight">{value}</p>
+        {subValue !== undefined && (
+          <p className="text-xl lg:text-2xl font-bold tracking-tight leading-tight">{subValue}</p>
+        )}
       </div>
       <div className="h-4">
         {trendLabel && (

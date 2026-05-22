@@ -113,24 +113,33 @@ export default function Dashboard() {
         <StatsCard title="Trabajadores Activos" value={activeWorkers.length} icon={Users} trendLabel={`${workers.length} total`} className="col-span-1" />
 
         {/* Carga Fija Total */}
-        <Card className="p-4 flex flex-col justify-between min-h-[130px] hover:shadow-lg transition-shadow duration-300">
-          <div className="flex items-start justify-between gap-2 min-h-[2.25rem]">
-            <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">Carga Fija Total</p>
+        <Card className="p-4 flex flex-col gap-2 hover:shadow-lg transition-shadow duration-300">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-medium text-muted-foreground leading-tight">Carga Fija Total</p>
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5 text-primary" />
             </div>
           </div>
           <div>
             <p className="text-xl lg:text-2xl font-bold tracking-tight leading-tight break-all">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Planilla + Fijos</p>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-1">
             <div>
-              <p className="text-[10px] text-muted-foreground">Planilla</p>
+              <div className="flex items-center gap-1 mb-0.5">
+                <Receipt className="w-3 h-3 text-primary" />
+                <p className="text-[10px] text-muted-foreground truncate">Planilla</p>
+              </div>
               <p className="text-xs font-semibold">{formatCurrency(totalPayroll)}</p>
+              <p className="text-[10px] text-muted-foreground">{activeWorkers.length} activos</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">Fijos</p>
+              <div className="flex items-center gap-1 mb-0.5">
+                <Receipt className="w-3 h-3 text-primary" />
+                <p className="text-[10px] text-muted-foreground truncate">Gastos Fijos</p>
+              </div>
               <p className="text-xs font-semibold">{formatCurrency(totalFixedExpenses)}</p>
+              <p className="text-[10px] text-muted-foreground">{fixedExpenses.filter(f => f.status === "activo").length} activos</p>
             </div>
           </div>
         </Card>
