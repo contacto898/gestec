@@ -342,8 +342,13 @@ export default function UsersPage() {
   });
 
   const updateUserRole = useMutation({
-    mutationFn: ({ id, role }) => base44.functions.invoke('updateUserRole', { userId: id, role }),
+    mutationFn: async ({ id, role }) => {
+      const res = await base44.functions.invoke('updateUserRole', { userId: id, role });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+    onError: (e) => alert('Error al cambiar rol: ' + e.message),
   });
 
   const createRole = useMutation({
