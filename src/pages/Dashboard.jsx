@@ -123,7 +123,7 @@ export default function Dashboard() {
           <div>
             <p className="text-xl lg:text-2xl font-bold tracking-tight leading-tight break-all">{formatCurrency(totalPayroll + totalFixedExpenses)}</p>
           </div>
-          <div className="hidden sm:grid grid-cols-2 gap-2 mt-1">
+          <div className="grid grid-cols-2 gap-2 mt-1">
             <div>
               <p className="text-[10px] text-muted-foreground">Planilla</p>
               <p className="text-xs font-semibold">{formatCurrency(totalPayroll)}</p>
@@ -132,9 +132,6 @@ export default function Dashboard() {
               <p className="text-[10px] text-muted-foreground">Fijos</p>
               <p className="text-xs font-semibold">{formatCurrency(totalFixedExpenses)}</p>
             </div>
-          </div>
-          <div className="h-4 sm:hidden">
-            <p className="text-xs text-muted-foreground">Planilla + Fijos</p>
           </div>
         </Card>
 
