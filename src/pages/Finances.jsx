@@ -310,7 +310,11 @@ export default function Finances() {
       });
       return;
     }
-    deleteExpense.mutate(item.id);
+    setConfirmState({
+      title: "¿Eliminar gasto?",
+      description: `Se eliminará el gasto "${item.description}" del ${item.date || ""}. Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteExpense.mutate(item.id),
+    });
   };
 
   const handleDeleteIncome = (item) => {
@@ -322,7 +326,11 @@ export default function Finances() {
       });
       return;
     }
-    deleteIncome.mutate(item.id);
+    setConfirmState({
+      title: "¿Eliminar ingreso?",
+      description: `Se eliminará el ingreso "${item.description}" del ${item.date || ""}. Esta acción no se puede deshacer.`,
+      onConfirm: () => deleteIncome.mutate(item.id),
+    });
   };
 
   // All unique months from both lists
