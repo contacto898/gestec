@@ -232,6 +232,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
 
 // ── Pay Confirm Dialog ───────────────────────────────────────────────────────
 function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
+  const [paymentMethod, setPaymentMethod] = useState("efectivo");
   const activeDeductions = deductions.filter(
     (d) => d.worker_id === worker?.id && d.status !== "completado" && d.paid_installments < d.installments
       && (!d.start_date || d.start_date <= getTodayLocal())
@@ -272,9 +273,22 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
               <span className={netPay >= 0 ? "text-emerald-600" : "text-red-500"}>{formatCurrency(netPay)}</span>
             </div>
           </div>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Método de pago</p>
+            <div className="flex gap-3">
+              {[{ value: "efectivo", label: "Efectivo" }, { value: "transferencia", label: "Transferencia" }].map((m) => (
+                <label key={m.value} className={`flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer flex-1 justify-center transition-colors ${
+                  paymentMethod === m.value ? "border-primary bg-primary/5 font-semibold" : "border-border hover:bg-muted/40"
+                }`}>
+                  <input type="radio" className="sr-only" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value)} />
+                  {m.label}
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={() => { onPay(worker, activeDeductions, netPay); onClose(); }}
+            <Button onClick={() => { onPay(worker, activeDeductions, netPay, paymentMethod); onClose(); }}
               className="bg-emerald-600 hover:bg-emerald-700 gap-2">
               <DollarSign className="w-4 h-4" /> Registrar Pago
             </Button>

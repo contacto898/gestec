@@ -87,13 +87,14 @@ export default function Payroll() {
     setEditing(null);
   };
 
-  const handlePay = async (worker, activeDeductions, netAmount) => {
+  const handlePay = async (worker, activeDeductions, netAmount, paymentMethod = "efectivo") => {
     const today = getTodayLocal();
     await createExpense.mutateAsync({
       description: `Pago planilla (${worker.payment_type}) — ${worker.name}`,
       amount: netAmount,
       date: today,
       category: "planilla",
+      payment_method: paymentMethod,
     });
     await updateWorker.mutateAsync({ id: worker.id, data: { ...worker, last_payment_date: today } });
     for (const d of activeDeductions) {

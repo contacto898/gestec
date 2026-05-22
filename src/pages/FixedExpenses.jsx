@@ -80,6 +80,7 @@ function getTodayLocal() {
 function PayDialog({ open, onClose, item, onConfirmPay }) {
   const [paidAmount, setPaidAmount] = useState(item?.amount || "");
   const [date, setDate] = useState(getTodayLocal());
+  const [paymentMethod, setPaymentMethod] = useState("efectivo");
 
   useEffect(() => {
     if (open) {
@@ -109,9 +110,22 @@ function PayDialog({ open, onClose, item, onConfirmPay }) {
             <Label>Fecha de pago</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
+          <div className="space-y-2">
+            <Label>Método de pago</Label>
+            <div className="flex gap-3">
+              {[{ value: "efectivo", label: "Efectivo" }, { value: "transferencia", label: "Transferencia" }].map((m) => (
+                <label key={m.value} className={`flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer flex-1 justify-center transition-colors ${
+                  paymentMethod === m.value ? "border-primary bg-primary/5 font-semibold" : "border-border hover:bg-muted/40"
+                }`}>
+                  <input type="radio" className="sr-only" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value)} />
+                  {m.label}
+                </label>
+              ))}
+            </div>
+          </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={() => { onConfirmPay(item, parseFloat(paidAmount), date); onClose(); }}
+            <Button onClick={() => { onConfirmPay(item, parseFloat(paidAmount), date, paymentMethod); onClose(); }}
               className="bg-emerald-600 hover:bg-emerald-700 gap-2" disabled={!paidAmount || parseFloat(paidAmount) <= 0}>
               <CheckCircle className="w-4 h-4" /> Confirmar Pago
             </Button>
@@ -307,7 +321,7 @@ export default function FixedExpenses() {
     setEditing(null);
   };
 
-  const handleConfirmPay = async (item, paidAmount, date) => {
+  const handleConfirmPay = async (item, paidAmount, date, paymentMethod = "efectivo") => {
     await createPayment.mutateAsync({
       fixed_expense_id: item.id,
       fixed_expense_description: item.description,
@@ -320,6 +334,7 @@ export default function FixedExpenses() {
       amount: paidAmount,
       date: date,
       category: "otros",
+      payment_method: paymentMethod,
     });
     addPaidToday("gastos_fijos", item.id);
     setPaidToday(getPaidToday("gastos_fijos"));
