@@ -103,7 +103,7 @@ export default function Payroll() {
     }
   };
 
-  const handleVacation = async (worker, option, paidAmount, days, vacStartDate, daysAccumulated) => {
+  const handleVacation = async (worker, option, paidAmount, days, vacStartDate, daysAccumulated, paymentMethod = "efectivo") => {
     const today = getTodayLocal();
     const dateRef = vacStartDate || today;
     const prevAccumulated = worker.accumulated_vacation_days || 0;
@@ -120,6 +120,7 @@ export default function Payroll() {
         amount: paidAmount,
         date: today,
         category: "planilla",
+        payment_method: paymentMethod,
       });
     }
 

@@ -103,6 +103,7 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
   const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto" | "acumular"
   const [daysOff, setDaysOff] = useState(7);
   const [vacStartDate, setVacStartDate] = useState(getTodayLocal());
+  const [paymentMethod, setPaymentMethod] = useState("efectivo");
   // For "acumular": how many days to take now vs accumulate
   const [daysToTakeNow, setDaysToTakeNow] = useState(0);
   const vacAmount = worker?.salary / 2 || 0;
@@ -194,15 +195,30 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
           )}
 
           {paidAmount > 0 && (
-            <div className="p-3 rounded-xl bg-emerald-50 flex justify-between items-center">
-              <span className="text-sm font-medium text-emerald-700">Monto a pagar</span>
-              <span className="font-bold text-emerald-600">{formatCurrency(paidAmount)}</span>
-            </div>
+            <>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Método de pago</p>
+                <div className="flex gap-3">
+                  {[{ value: "efectivo", label: "Efectivo" }, { value: "transferencia", label: "Transferencia" }].map((m) => (
+                    <label key={m.value} className={`flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer flex-1 justify-center transition-colors ${
+                      paymentMethod === m.value ? "border-primary bg-primary/5 font-semibold" : "border-border hover:bg-muted/40"
+                    }`}>
+                      <input type="radio" className="sr-only" value={m.value} checked={paymentMethod === m.value} onChange={() => setPaymentMethod(m.value)} />
+                      {m.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-emerald-50 flex justify-between items-center">
+                <span className="text-sm font-medium text-emerald-700">Monto a pagar</span>
+                <span className="font-bold text-emerald-600">{formatCurrency(paidAmount)}</span>
+              </div>
+            </>
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
             <Button onClick={() => {
-              onConfirm(worker, option, paidAmount, option === "mixto" ? daysOff : daysToTakeNow, vacStartDate, daysAccumulated);
+              onConfirm(worker, option, paidAmount, option === "mixto" ? daysOff : daysToTakeNow, vacStartDate, daysAccumulated, paymentMethod);
               onClose();
             }} className="bg-amber-500 hover:bg-amber-600 gap-2">
               <Palmtree className="w-4 h-4" /> Confirmar
