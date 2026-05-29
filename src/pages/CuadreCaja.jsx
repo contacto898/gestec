@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Calculator, Save, AlertTriangle, CheckCircle2, Pencil } from "lucide-react";
+import { Plus, Trash2, Calculator, Save, AlertTriangle, CheckCircle2, Pencil, History, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -30,6 +29,13 @@ export default function CuadreCaja() {
   const [editAmount, setEditAmount] = useState("");
   const [newConcept, setNewConcept] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+
+  const { data: cuadreHistories = [] } = useQuery({
+    queryKey: ["cuadreHistory"],
+    queryFn: () => base44.entities.CuadreHistory.list("-date", 200),
+  });
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["cashRegister"],
@@ -75,11 +81,23 @@ export default function CuadreCaja() {
     setEditingId(null);
   };
 
+  const saveHistory = useMutation({
+    mutationFn: (data) => base44.entities.CuadreHistory.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cuadreHistory"] }),
+  });
+
   const handleCuadre = () => {
     const today = getTodayStr();
-    // Update last_updated on all items to mark the cuadre date
     items.forEach((item) => {
       updateItem.mutate({ id: item.id, data: { ...item, last_updated: today } });
+    });
+    // Guardar snapshot en historial
+    saveHistory.mutate({
+      date: today,
+      items_snapshot: items.map((i) => ({ concept: i.concept, amount: i.amount || 0 })),
+      total_cuadre: totalCuadre,
+      balance_sistema: balanceTotal,
+      diferencia: totalCuadre - balanceTotal,
     });
   };
 
@@ -91,12 +109,17 @@ export default function CuadreCaja() {
   const totalCuadre = items.reduce((s, i) => s + (i.amount || 0), 0);
   const faltante = totalCuadre - balanceTotal;
 
-  // Last cuadre date: take the most recent last_updated from any item
+  // Last cuadre date
   const lastCuadreDate = items
     .map((i) => i.last_updated)
     .filter(Boolean)
     .sort()
     .reverse()[0];
+
+  // Historial filtrado
+  const filteredHistories = selectedDate
+    ? cuadreHistories.filter((h) => h.date === selectedDate)
+    : cuadreHistories.slice(0, 20);
 
   if (isLoading) {
     return (
@@ -115,6 +138,9 @@ export default function CuadreCaja() {
           <p className="text-muted-foreground mt-1">Registro manual de montos por concepto</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setShowHistory(!showHistory)}>
+            <History className="w-4 h-4" /> Historial
+          </Button>
           <Button variant="outline" className="gap-2" onClick={() => setShowAddForm(!showAddForm)}>
             <Plus className="w-4 h-4" /> Agregar concepto
           </Button>
@@ -124,28 +150,63 @@ export default function CuadreCaja() {
         </div>
       </div>
 
-      {/* Add concept form */}
-      {showAddForm && (
-        <Card className="p-4 border-dashed border-2 border-primary/30 bg-primary/5">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Ej: Efectivo Chepen, BCP, Telecredito..."
-              value={newConcept}
-              onChange={(e) => setNewConcept(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddConcept()}
-              className="flex-1"
-            />
-            <Button onClick={handleAddConcept} disabled={!newConcept.trim()}>
-              <Save className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" onClick={() => { setShowAddForm(false); setNewConcept(""); }}>
-              Cancelar
-            </Button>
+      {/* Historial */}
+      {showHistory && (
+        <Card className="overflow-hidden">
+          <div className="px-4 py-3 bg-muted/50 border-b flex flex-wrap items-center justify-between gap-3">
+            <span className="font-semibold text-sm flex items-center gap-2"><History className="w-4 h-4" /> Historial de Cuadres</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filtrar por fecha:</span>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-40 h-8 text-xs"
+              />
+              {selectedDate && (
+                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setSelectedDate("")}>Limpiar</Button>
+              )}
+            </div>
           </div>
+          {filteredHistories.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">{selectedDate ? "No hay cuadres en esa fecha" : "Aún no hay cuadres registrados"}</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {filteredHistories.map((h) => (
+                <div key={h.id} className="px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <span className="font-semibold text-sm">
+                      {format(new Date(h.date + "T12:00:00"), "dd MMM yyyy", { locale: es })}
+                    </span>
+                    <div className="flex flex-wrap gap-3 text-xs">
+                      <span className="text-blue-600 font-medium">Cuadre: {formatCurrency(h.total_cuadre)}</span>
+                      <span className="text-emerald-600 font-medium">Sistema: {formatCurrency(h.balance_sistema)}</span>
+                      <span className={`font-bold ${(h.diferencia || 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                        {(h.diferencia || 0) >= 0 ? "Sobrante" : "Faltante"}: {formatCurrency(Math.abs(h.diferencia || 0))}
+                      </span>
+                    </div>
+                  </div>
+                  {h.items_snapshot && h.items_snapshot.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      {h.items_snapshot.map((it, idx) => (
+                        <div key={idx} className="flex justify-between bg-muted/40 rounded px-2 py-1 text-xs">
+                          <span className="text-muted-foreground">{it.concept}</span>
+                          <span className="font-medium tabular-nums">{formatCurrency(it.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       )}
 
-      {/* Conceptos list */}
+      {/* Add concept form */}
       <Card className="overflow-hidden">
         <div className="px-4 py-3 bg-muted/50 border-b flex items-center justify-between">
           <span className="font-semibold text-sm">Conceptos</span>

@@ -1,0 +1,46 @@
+{
+  "name": "CuadreHistory",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del cuadre"
+    },
+    "items_snapshot": {
+      "type": "array",
+      "description": "Snapshot de los conceptos con sus montos",
+      "items": {
+        "type": "object",
+        "properties": {
+          "concept": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_cuadre": {
+      "type": "number",
+      "description": "Total de los conceptos"
+    },
+    "balance_sistema": {
+      "type": "number",
+      "description": "Balance del sistema (ingresos - gastos)"
+    },
+    "diferencia": {
+      "type": "number",
+      "description": "Diferencia entre cuadre y sistema"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas del cuadre"
+    }
+  },
+  "required": [
+    "date",
+    "total_cuadre"
+  ]
+}
