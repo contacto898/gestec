@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, Calculator, Save, AlertTriangle, CheckCircle2, Pencil, History, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Calculator, Save, AlertTriangle, CheckCircle2, Pencil, History, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -150,61 +151,98 @@ export default function CuadreCaja() {
         </div>
       </div>
 
-      {/* Historial */}
-      {showHistory && (
-        <Card className="overflow-hidden">
-          <div className="px-4 py-3 bg-muted/50 border-b flex flex-wrap items-center justify-between gap-3">
-            <span className="font-semibold text-sm flex items-center gap-2"><History className="w-4 h-4" /> Historial de Cuadres</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Filtrar por fecha:</span>
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-40 h-8 text-xs"
-              />
-              {selectedDate && (
-                <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setSelectedDate("")}>Limpiar</Button>
-              )}
-            </div>
+      {/* Historial Dialog */}
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-3xl w-full max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <History className="w-5 h-5" /> Historial de Cuadres
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Filtro de fecha */}
+          <div className="flex items-center gap-2 pb-3 border-b">
+            <span className="text-sm text-muted-foreground">Filtrar por fecha:</span>
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-44 h-8 text-sm"
+            />
+            {selectedDate && (
+              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setSelectedDate("")}>
+                <X className="w-3 h-3 mr-1" /> Limpiar
+              </Button>
+            )}
+            <span className="ml-auto text-xs text-muted-foreground">{filteredHistories.length} cuadre(s)</span>
           </div>
-          {filteredHistories.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">{selectedDate ? "No hay cuadres en esa fecha" : "Aún no hay cuadres registrados"}</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {filteredHistories.map((h) => (
-                <div key={h.id} className="px-4 py-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <span className="font-semibold text-sm">
-                      {format(new Date(h.date + "T12:00:00"), "dd MMM yyyy", { locale: es })}
-                    </span>
-                    <div className="flex flex-wrap gap-3 text-xs">
-                      <span className="text-blue-600 font-medium">Cuadre: {formatCurrency(h.total_cuadre)}</span>
-                      <span className="text-emerald-600 font-medium">Sistema: {formatCurrency(h.balance_sistema)}</span>
-                      <span className={`font-bold ${(h.diferencia || 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                        {(h.diferencia || 0) >= 0 ? "Sobrante" : "Faltante"}: {formatCurrency(Math.abs(h.diferencia || 0))}
+
+          {/* Lista de cuadres */}
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            {filteredHistories.length === 0 ? (
+              <div className="py-16 text-center text-muted-foreground">
+                <History className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>{selectedDate ? "No hay cuadres en esa fecha" : "Aún no hay cuadres registrados"}</p>
+              </div>
+            ) : (
+              <div className="space-y-4 py-2">
+                {filteredHistories.map((h) => (
+                  <Card key={h.id} className="overflow-hidden">
+                    {/* Header del cuadre */}
+                    <div className="px-4 py-2.5 bg-muted/50 border-b">
+                      <span className="font-semibold text-sm">
+                        {format(new Date(h.date + "T12:00:00"), "EEEE dd 'de' MMMM yyyy", { locale: es })}
                       </span>
                     </div>
-                  </div>
-                  {h.items_snapshot && h.items_snapshot.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                      {h.items_snapshot.map((it, idx) => (
-                        <div key={idx} className="flex justify-between bg-muted/40 rounded px-2 py-1 text-xs">
-                          <span className="text-muted-foreground">{it.concept}</span>
-                          <span className="font-medium tabular-nums">{formatCurrency(it.amount)}</span>
+
+                    {/* Recuadros de resumen */}
+                    <div className="grid grid-cols-3 gap-3 p-4">
+                      <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total Cuadre</p>
+                        <p className="text-xl font-bold text-blue-800 mt-0.5 tabular-nums">{formatCurrency(h.total_cuadre)}</p>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Balance Sistema</p>
+                        <p className="text-xl font-bold text-emerald-800 mt-0.5 tabular-nums">{formatCurrency(h.balance_sistema)}</p>
+                      </div>
+                      <div className={`rounded-lg border p-3 ${
+                        (h.diferencia || 0) < 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
+                      }`}>
+                        <div className="flex items-center gap-1">
+                          {(h.diferencia || 0) < 0
+                            ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                            : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                          <p className={`text-xs font-medium uppercase tracking-wide ${
+                            (h.diferencia || 0) < 0 ? "text-red-700" : "text-emerald-700"
+                          }`}>{(h.diferencia || 0) < 0 ? "Faltante" : "Sobrante"}</p>
                         </div>
-                      ))}
+                        <p className={`text-xl font-bold mt-0.5 tabular-nums ${
+                          (h.diferencia || 0) < 0 ? "text-red-600" : "text-emerald-600"
+                        }`}>{formatCurrency(Math.abs(h.diferencia || 0))}</p>
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
+
+                    {/* Conceptos */}
+                    {h.items_snapshot && h.items_snapshot.length > 0 && (
+                      <div className="px-4 pb-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Conceptos</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                          {h.items_snapshot.map((it, idx) => (
+                            <div key={idx} className="flex justify-between bg-muted/40 rounded px-3 py-1.5 text-sm">
+                              <span className="text-muted-foreground">{it.concept}</span>
+                              <span className="font-semibold tabular-nums ml-2">{formatCurrency(it.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add concept form */}
       <Card className="overflow-hidden">
