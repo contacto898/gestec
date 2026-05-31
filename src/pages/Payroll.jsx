@@ -194,8 +194,12 @@ export default function Payroll() {
     const prevRecord = allRecords
       .filter((r) => r.record_date < record.record_date)
       .sort((a, b) => b.record_date.localeCompare(a.record_date))[0];
-    // Restaurar acumulados desde el registro previo (no recalcular)
-    const prevAccumulated = prevRecord ? (prevRecord.days_accumulated || 0) : 0;
+    // Restaurar: días acumulados del registro previo + días que quedaron sin usar en ese registro
+    const prevSavedAccum = prevRecord ? (prevRecord.days_accumulated || 0) : 0;
+    const prevLeftover = prevRecord
+      ? Math.max(0, (prevRecord.total_days_available || 15) - (prevRecord.days_taken || 0) - prevSavedAccum)
+      : 0;
+    const prevAccumulated = prevSavedAccum + prevLeftover;
     const prevVacDate = prevRecord ? (prevRecord.vac_start_date || prevRecord.record_date) : null;
 
     if (worker) {
