@@ -43,7 +43,6 @@ export default function CuadreCaja() {
     queryFn: () => base44.entities.CashRegister.list("order", 100),
   });
 
-  // Balance total from incomes - expenses
   const { data: incomes = [] } = useQuery({
     queryKey: ["incomes"],
     queryFn: () => base44.entities.Income.list("-created_date", 500),
@@ -53,12 +52,17 @@ export default function CuadreCaja() {
     queryFn: () => base44.entities.Expense.list("-created_date", 500),
   });
 
-  const balanceTotal = incomes.reduce((s, i) => s + (i.amount || 0), 0) -
+  const balanceTotal =
+    incomes.reduce((s, i) => s + (i.amount || 0), 0) -
     expenses.reduce((s, e) => s + (e.amount || 0), 0);
 
   const createItem = useMutation({
     mutationFn: (data) => base44.entities.CashRegister.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["cashRegister"] }); setNewConcept(""); setShowAddForm(false); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cashRegister"] });
+      setNewConcept("");
+      setShowAddForm(false);
+    },
   });
 
   const updateItem = useMutation({
@@ -69,6 +73,11 @@ export default function CuadreCaja() {
   const deleteItem = useMutation({
     mutationFn: (id) => base44.entities.CashRegister.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cashRegister"] }),
+  });
+
+  const saveHistory = useMutation({
+    mutationFn: (data) => base44.entities.CuadreHistory.create(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cuadreHistory"] }),
   });
 
   const handleStartEdit = (item) => {
@@ -82,17 +91,11 @@ export default function CuadreCaja() {
     setEditingId(null);
   };
 
-  const saveHistory = useMutation({
-    mutationFn: (data) => base44.entities.CuadreHistory.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cuadreHistory"] }),
-  });
-
   const handleCuadre = () => {
     const today = getTodayStr();
     items.forEach((item) => {
       updateItem.mutate({ id: item.id, data: { ...item, last_updated: today } });
     });
-    // Guardar snapshot en historial
     saveHistory.mutate({
       date: today,
       items_snapshot: items.map((i) => ({ concept: i.concept, amount: i.amount || 0 })),
@@ -110,14 +113,12 @@ export default function CuadreCaja() {
   const totalCuadre = items.reduce((s, i) => s + (i.amount || 0), 0);
   const faltante = totalCuadre - balanceTotal;
 
-  // Last cuadre date
   const lastCuadreDate = items
     .map((i) => i.last_updated)
     .filter(Boolean)
     .sort()
     .reverse()[0];
 
-  // Historial filtrado
   const filteredHistories = selectedDate
     ? cuadreHistories.filter((h) => h.date === selectedDate)
     : cuadreHistories.slice(0, 20);
@@ -138,14 +139,14 @@ export default function CuadreCaja() {
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Cuadre de Caja</h1>
           <p className="text-muted-foreground mt-1">Registro manual de montos por concepto</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setShowHistory(!showHistory)}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowHistory(true)}>
             <History className="w-4 h-4" /> Historial
           </Button>
-          <Button variant="outline" className="gap-2" onClick={() => setShowAddForm(!showAddForm)}>
-            <Plus className="w-4 h-4" /> Agregar concepto
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAddForm(!showAddForm)}>
+            <Plus className="w-4 h-4" /> Agregar
           </Button>
-          <Button className="gap-2" onClick={handleCuadre}>
+          <Button size="sm" className="gap-1.5" onClick={handleCuadre}>
             <Calculator className="w-4 h-4" /> Realizar cuadre
           </Button>
         </div>
@@ -160,8 +161,7 @@ export default function CuadreCaja() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Filtro de fecha */}
-          <div className="flex items-center gap-2 pb-3 border-b">
+          <div className="flex flex-wrap items-center gap-2 pb-3 border-b">
             <span className="text-sm text-muted-foreground">Filtrar por fecha:</span>
             <Input
               type="date"
@@ -177,7 +177,6 @@ export default function CuadreCaja() {
             <span className="ml-auto text-xs text-muted-foreground">{filteredHistories.length} cuadre(s)</span>
           </div>
 
-          {/* Lista de cuadres */}
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
             {filteredHistories.length === 0 ? (
               <div className="py-16 text-center text-muted-foreground">
@@ -188,49 +187,44 @@ export default function CuadreCaja() {
               <div className="space-y-4 py-2">
                 {filteredHistories.map((h) => (
                   <Card key={h.id} className="overflow-hidden">
-                    {/* Header del cuadre */}
                     <div className="px-4 py-2.5 bg-muted/50 border-b">
                       <span className="font-semibold text-sm">
                         {format(new Date(h.date + "T12:00:00"), "EEEE dd 'de' MMMM yyyy", { locale: es })}
                       </span>
                     </div>
 
-                    {/* Recuadros de resumen */}
                     <div className="grid grid-cols-3 gap-3 p-4">
                       <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total Cuadre</p>
-                        <p className="text-xl font-bold text-blue-800 mt-0.5 tabular-nums">{formatCurrency(h.total_cuadre)}</p>
+                        <p className="text-lg font-bold text-blue-800 mt-0.5 tabular-nums">{formatCurrency(h.total_cuadre)}</p>
                       </div>
                       <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Balance Sistema</p>
-                        <p className="text-xl font-bold text-emerald-800 mt-0.5 tabular-nums">{formatCurrency(h.balance_sistema)}</p>
+                        <p className="text-lg font-bold text-emerald-800 mt-0.5 tabular-nums">{formatCurrency(h.balance_sistema)}</p>
                       </div>
-                      <div className={`rounded-lg border p-3 ${
-                        (h.diferencia || 0) < 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
-                      }`}>
+                      <div className={`rounded-lg border p-3 ${(h.diferencia || 0) < 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"}`}>
                         <div className="flex items-center gap-1">
                           {(h.diferencia || 0) < 0
                             ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
                             : <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
-                          <p className={`text-xs font-medium uppercase tracking-wide ${
-                            (h.diferencia || 0) < 0 ? "text-red-700" : "text-emerald-700"
-                          }`}>{(h.diferencia || 0) < 0 ? "Faltante" : "Sobrante"}</p>
+                          <p className={`text-xs font-medium uppercase tracking-wide ${(h.diferencia || 0) < 0 ? "text-red-700" : "text-emerald-700"}`}>
+                            {(h.diferencia || 0) < 0 ? "Faltante" : "Sobrante"}
+                          </p>
                         </div>
-                        <p className={`text-xl font-bold mt-0.5 tabular-nums ${
-                          (h.diferencia || 0) < 0 ? "text-red-600" : "text-emerald-600"
-                        }`}>{formatCurrency(Math.abs(h.diferencia || 0))}</p>
+                        <p className={`text-lg font-bold mt-0.5 tabular-nums ${(h.diferencia || 0) < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                          {formatCurrency(Math.abs(h.diferencia || 0))}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Conceptos */}
                     {h.items_snapshot && h.items_snapshot.length > 0 && (
                       <div className="px-4 pb-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Conceptos</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                           {h.items_snapshot.map((it, idx) => (
                             <div key={idx} className="flex justify-between bg-muted/40 rounded px-3 py-1.5 text-sm">
-                              <span className="text-muted-foreground">{it.concept}</span>
-                              <span className="font-semibold tabular-nums ml-2">{formatCurrency(it.amount)}</span>
+                              <span className="text-muted-foreground truncate">{it.concept}</span>
+                              <span className="font-semibold tabular-nums ml-2 shrink-0">{formatCurrency(it.amount)}</span>
                             </div>
                           ))}
                         </div>
@@ -245,6 +239,27 @@ export default function CuadreCaja() {
       </Dialog>
 
       {/* Add concept form */}
+      {showAddForm && (
+        <Card className="p-4 border-dashed border-2 border-primary/30 bg-primary/5">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ej: Efectivo Chepen, BCP, Telecredito..."
+              value={newConcept}
+              onChange={(e) => setNewConcept(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddConcept()}
+              className="flex-1"
+            />
+            <Button onClick={handleAddConcept} disabled={!newConcept.trim()}>
+              <Save className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" onClick={() => { setShowAddForm(false); setNewConcept(""); }}>
+              Cancelar
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Conceptos list */}
       <Card className="overflow-hidden">
         <div className="px-4 py-3 bg-muted/50 border-b flex items-center justify-between">
           <span className="font-semibold text-sm">Conceptos</span>
@@ -260,11 +275,11 @@ export default function CuadreCaja() {
         ) : (
           <div className="divide-y">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+              <div key={item.id} className="flex items-center gap-2 px-4 py-3 hover:bg-muted/30 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{item.concept}</p>
+                  <p className="font-medium text-sm truncate">{item.concept}</p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   {editingId === item.id ? (
                     <>
                       <Input
@@ -273,26 +288,28 @@ export default function CuadreCaja() {
                         value={editAmount}
                         onChange={(e) => setEditAmount(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSaveAmount(item)}
-                        className="w-36 text-right"
+                        className="w-28 sm:w-36 text-right"
                         autoFocus
                       />
                       <Button size="sm" onClick={() => handleSaveAmount(item)}>
                         <Save className="w-3.5 h-3.5" />
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>Cancelar</Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
+                        Cancelar
+                      </Button>
                     </>
                   ) : (
                     <>
-                      <span className="font-bold text-base w-36 text-right tabular-nums">
+                      <span className="font-bold text-sm sm:text-base w-28 sm:w-36 text-right tabular-nums">
                         {formatCurrency(item.amount || 0)}
                       </span>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleStartEdit(item)}>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => handleStartEdit(item)}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
                         onClick={() => {
                           if (window.confirm(`¿Eliminar el concepto "${item.concept}"?`)) deleteItem.mutate(item.id);
                         }}
@@ -311,7 +328,6 @@ export default function CuadreCaja() {
       {/* Totales */}
       {items.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Total cuadre */}
           <Card className="p-4 bg-blue-50 border-blue-200">
             <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total Cuadre</p>
             <p className="text-2xl font-bold text-blue-800 mt-1 tabular-nums">{formatCurrency(totalCuadre)}</p>
@@ -322,14 +338,12 @@ export default function CuadreCaja() {
             )}
           </Card>
 
-          {/* Balance total del sistema */}
           <Card className="p-4 bg-emerald-50 border-emerald-200">
             <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Balance Total Sistema</p>
             <p className="text-2xl font-bold text-emerald-800 mt-1 tabular-nums">{formatCurrency(balanceTotal)}</p>
             <p className="text-xs text-emerald-600 mt-1">Ingresos − Gastos acumulados</p>
           </Card>
 
-          {/* Faltante */}
           <Card className={`p-4 ${faltante > 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}>
             <div className="flex items-center gap-1.5">
               {faltante <= 0 ? (
