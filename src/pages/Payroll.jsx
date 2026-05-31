@@ -190,11 +190,12 @@ export default function Payroll() {
 
     // 3. Calcular estado previo
     const worker = workers.find((w) => w.id === record.worker_id);
-    const prevAccumulated = Math.max(0, (record.total_days_available || 15) - 15);
     const allRecords = await base44.entities.VacationRecord.filter({ worker_id: record.worker_id });
     const prevRecord = allRecords
       .filter((r) => r.record_date < record.record_date)
       .sort((a, b) => b.record_date.localeCompare(a.record_date))[0];
+    // Restaurar acumulados desde el registro previo (no recalcular)
+    const prevAccumulated = prevRecord ? (prevRecord.days_accumulated || 0) : 0;
     const prevVacDate = prevRecord ? (prevRecord.vac_start_date || prevRecord.record_date) : null;
 
     if (worker) {
