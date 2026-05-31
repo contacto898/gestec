@@ -327,10 +327,10 @@ export default function CuadreCaja() {
 
       {/* Totales */}
       {items.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           <Card className="p-4 bg-blue-50 border-blue-200">
             <p className="text-xs font-medium uppercase tracking-wide text-blue-700">Total Cuadre</p>
-            <p className="text-2xl font-bold text-blue-800 mt-1 tabular-nums">{formatCurrency(totalCuadre)}</p>
+            <p className="text-xl font-bold text-blue-800 mt-1 tabular-nums break-all">{formatCurrency(totalCuadre)}</p>
             {lastCuadreDate && (
               <p className="text-xs text-blue-600 mt-1">
                 Último cuadre: {format(parseLocalDate(lastCuadreDate), "dd MMM yyyy", { locale: es })}
@@ -340,7 +340,7 @@ export default function CuadreCaja() {
 
           <Card className="p-4 bg-emerald-50 border-emerald-200">
             <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Balance Total Sistema</p>
-            <p className="text-2xl font-bold text-emerald-800 mt-1 tabular-nums">{formatCurrency(balanceTotal)}</p>
+            <p className="text-xl font-bold text-emerald-800 mt-1 tabular-nums break-all">{formatCurrency(balanceTotal)}</p>
             <p className="text-xs text-emerald-600 mt-1">Ingresos − Gastos acumulados</p>
           </Card>
 
@@ -355,7 +355,7 @@ export default function CuadreCaja() {
                 {faltante <= 0 ? "Faltante" : "Sobrante"}
               </p>
             </div>
-            <p className={`text-2xl font-bold mt-1 tabular-nums ${faltante <= 0 ? "text-red-600" : "text-emerald-600"}`}>
+            <p className={`text-xl font-bold mt-1 tabular-nums break-all ${faltante <= 0 ? "text-red-600" : "text-emerald-600"}`}>
               {formatCurrency(Math.abs(faltante))}
             </p>
             <p className={`text-xs mt-1 ${faltante <= 0 ? "text-red-500" : "text-emerald-500"}`}>
