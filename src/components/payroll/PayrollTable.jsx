@@ -409,7 +409,7 @@ function WorkerCard({ w, deductions, vacationRecords, onEdit, onDelete, onPayCli
 // ── Main Table ───────────────────────────────────────────────────────────────
 export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, onUseAccumulated, vacPaidToday }) {
   const { data: vacationRecords = [] } = useQuery({
-    queryKey: ["vacationRecords"],
+    queryKey: ["vacation_records"],
     queryFn: () => base44.entities.VacationRecord.list("-vac_start_date", 500),
   });
   const [payWorker, setPayWorker] = useState(null);
