@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Trash2, DollarSign, ChevronDown, ChevronUp, Palmtree } from "lucide-react";
-import { format, differenceInMonths, differenceInYears } from "date-fns";
+import { format, differenceInMonths, differenceInYears, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { isAlreadyPaidThisPeriod, getNextPaymentDate, isPaymentDue } from "@/lib/paidToday";
 
@@ -14,19 +16,16 @@ function formatCurrency(n) {
   return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n || 0);
 }
 
-
-// Returns the amount to pay per period based on monthly salary
 function getSalaryByType(salary, paymentType) {
   if (paymentType === "quincenal") return salary / 2;
   if (paymentType === "semanal") return salary / 4;
-  return salary; // mensual
+  return salary;
 }
 
 function getInstallmentAmount(deduction) {
   return deduction.total_amount / deduction.installments;
 }
 
-// Check if worker has completed 1+ year and hasn't received vacation for current year
 function getVacationStatus(worker) {
   if (!worker.has_vacations) return null;
   if (!worker.hire_date) return null;
@@ -35,23 +34,39 @@ function getVacationStatus(worker) {
   const now = new Date();
   const years = differenceInYears(now, hire);
   if (years < 1) return null;
-
-  // Check months since last vacation payment
   if (worker.vacation_paid_date) {
     const [vy, vm, vd] = worker.vacation_paid_date.split("-").map(Number);
     const lastVacPaid = new Date(vy, vm - 1, vd);
     const monthsSince = differenceInMonths(now, lastVacPaid);
-    if (monthsSince < 11) return null; // Not due yet
+    if (monthsSince < 11) return null;
   }
-  // Vacation = half a month salary
   const vacationAmount = worker.salary / 2;
   return { years, vacationAmount };
 }
 
-// Returns today in yyyy-MM-dd local time
 function getTodayLocal() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function getActiveVacation(workerId, vacationRecords) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const workerVacs = vacationRecords
+    .filter((v) => v.worker_id === workerId && v.vac_start_date && (v.days_taken || 0) > 0)
+    .sort((a, b) => b.vac_start_date.localeCompare(a.vac_start_date));
+  for (const v of workerVacs) {
+    const [sy, sm, sd] = v.vac_start_date.split("-").map(Number);
+    const start = new Date(sy, sm - 1, sd);
+    const end = addDays(start, v.days_taken - 1);
+    if (today >= start && today <= end) {
+      return { start, end, days: v.days_taken };
+    }
+  }
+  return null;
 }
 
 // ── Use Accumulated Days Dialog ─────────────────────────────────────────────
@@ -100,17 +115,13 @@ function UseAccumulatedDialog({ open, onClose, worker, onConfirm }) {
 
 // ── Vacation Dialog ──────────────────────────────────────────────────────────
 function VacationDialog({ open, onClose, worker, onConfirm }) {
-  const [option, setOption] = useState("pago"); // "pago" | "vacaciones" | "mixto" | "acumular"
+  const [option, setOption] = useState("pago");
   const [daysOff, setDaysOff] = useState(7);
   const [vacStartDate, setVacStartDate] = useState(getTodayLocal());
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
-  // For "acumular": how many days to take now vs accumulate
   const [daysToTakeNow, setDaysToTakeNow] = useState(0);
   const vacAmount = worker?.salary / 2 || 0;
   const totalVacDays = 15 + (worker?.accumulated_vacation_days || 0);
-
-  // For "acumular": days taken now generate proportional pay reduction
-  const accumulatePaidAmount = daysToTakeNow > 0 ? 0 : 0; // No pay in accumulate mode
   const daysAccumulated = totalVacDays - daysToTakeNow;
 
   const paidAmount = option === "vacaciones" ? 0
@@ -149,7 +160,6 @@ function VacationDialog({ open, onClose, worker, onConfirm }) {
             </div>
           </div>
 
-          {/* Fecha de inicio (para opciones con días libres) */}
           {(option === "vacaciones" || option === "mixto" || (option === "acumular" && daysToTakeNow > 0)) && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Fecha de inicio de vacaciones</label>
@@ -300,7 +310,7 @@ function PayConfirmDialog({ open, onClose, worker, deductions, onPay }) {
 }
 
 // ── Worker Card (mobile/tablet) ───────────────────────────────────────────────
-function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, onAccumClick, vacPaidToday }) {
+function WorkerCard({ w, deductions, vacationRecords, onEdit, onDelete, onPayClick, onVacClick, onAccumClick, vacPaidToday }) {
   const [expanded, setExpanded] = useState(false);
   const workerDeductions = deductions.filter(
     (d) => d.worker_id === w.id && d.status !== "completado" && d.paid_installments < d.installments
@@ -315,14 +325,20 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
   const nextPayDate = getNextPaymentDate(w);
   const alreadyVacPaid = vacPaidToday?.includes(w.id);
   const canPay = payDue && !alreadyPaid;
+  const activeVac = getActiveVacation(w.id, vacationRecords);
 
   return (
-    <div className="p-4 border-b last:border-b-0 hover:bg-muted/20 transition-colors">
+    <div className={`p-4 border-b last:border-b-0 transition-colors ${activeVac ? "bg-yellow-50 border-l-4 border-l-yellow-400" : "hover:bg-muted/20"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold">{w.name}</span>
             {vacStatus && <Palmtree className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+            {activeVac && (
+              <span className="text-xs bg-yellow-200 text-yellow-800 font-semibold px-2 py-0.5 rounded-full">
+                🏖 Vac. {format(activeVac.start, "dd/MM")} – {format(activeVac.end, "dd/MM")}
+              </span>
+            )}
             <Badge className={w.status === "activo" ? "bg-emerald-100 text-emerald-700 text-xs" : "bg-red-100 text-red-700 text-xs"}>
               {w.status === "activo" ? "Activo" : "Inactivo"}
             </Badge>
@@ -339,7 +355,9 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
           </div>
           <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
             <Badge variant="secondary" className="font-normal">{paymentTypeLabels[w.payment_type]}</Badge>
-            {w.hire_date && <span>{format(new Date(+w.hire_date.split("-")[0], +w.hire_date.split("-")[1]-1, +w.hire_date.split("-")[2]), "dd MMM yyyy", { locale: es })}</span>}
+            {w.hire_date && (
+              <span>{format(new Date(+w.hire_date.split("-")[0], +w.hire_date.split("-")[1]-1, +w.hire_date.split("-")[2]), "dd MMM yyyy", { locale: es })}</span>
+            )}
           </div>
           {workerDeductions.length > 0 && (
             <button onClick={() => setExpanded(!expanded)} className="mt-2 text-xs text-primary flex items-center gap-1">
@@ -390,6 +408,10 @@ function WorkerCard({ w, deductions, onEdit, onDelete, onPayClick, onVacClick, o
 
 // ── Main Table ───────────────────────────────────────────────────────────────
 export default function PayrollTable({ workers, deductions, onEdit, onDelete, onPay, onVacation, onUseAccumulated, vacPaidToday }) {
+  const { data: vacationRecords = [] } = useQuery({
+    queryKey: ["vacationRecords"],
+    queryFn: () => base44.entities.VacationRecord.list("-vac_start_date", 500),
+  });
   const [payWorker, setPayWorker] = useState(null);
   const [vacWorker, setVacWorker] = useState(null);
   const [accumWorker, setAccumWorker] = useState(null);
@@ -407,7 +429,7 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
             <div className="p-12 text-center text-muted-foreground">No hay trabajadores registrados</div>
           ) : (
             workers.map((w) => (
-              <WorkerCard key={w.id} w={w} deductions={deductions}
+              <WorkerCard key={w.id} w={w} deductions={deductions} vacationRecords={vacationRecords}
                 onEdit={onEdit} onDelete={onDelete}
                 onPayClick={setPayWorker} onVacClick={setVacWorker}
                 onAccumClick={setAccumWorker}
@@ -448,11 +470,12 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                 const nextPayDate = getNextPaymentDate(w);
                 const alreadyVacPaid = vacPaidToday?.includes(w.id);
                 const canPay = payDue && !alreadyPaid;
+                const activeVac = getActiveVacation(w.id, vacationRecords);
 
                 return [
-                  <TableRow key={w.id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow key={w.id} className={`transition-colors ${activeVac ? "bg-yellow-50 border-l-4 border-l-yellow-400" : "hover:bg-muted/30"}`}>
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap">
                         {workerDeductions.length > 0 && (
                           <button onClick={() => toggleExpand(w.id)} className="text-muted-foreground hover:text-foreground">
                             {expanded[w.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -462,6 +485,11 @@ export default function PayrollTable({ workers, deductions, onEdit, onDelete, on
                         {vacStatus && (
                           <span title={`Vacaciones pendientes (${vacStatus.years} año${vacStatus.years > 1 ? "s" : ""})`}>
                             <Palmtree className="w-3.5 h-3.5 text-amber-500 ml-1" />
+                          </span>
+                        )}
+                        {activeVac && (
+                          <span className="text-xs bg-yellow-200 text-yellow-800 font-semibold px-1.5 py-0.5 rounded-full ml-1 whitespace-nowrap">
+                            🏖 {format(activeVac.start, "dd/MM")} – {format(activeVac.end, "dd/MM")}
                           </span>
                         )}
                       </div>
