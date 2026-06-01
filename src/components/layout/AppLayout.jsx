@@ -20,6 +20,8 @@ const PAGE_TITLES = {
   "/cuadre-caja": "Cuadre de Caja",
 };
 
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
+
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -29,6 +31,7 @@ export default function AppLayout() {
   const mainRef = useRef(null);
   const scrollPositions = useRef({});
   const prevPathname = useRef(location.pathname);
+  const inactivityTimer = useRef(null);
 
   useEffect(() => {
     const main = mainRef.current;
@@ -41,6 +44,22 @@ export default function AppLayout() {
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer.current);
+      inactivityTimer.current = setTimeout(() => {
+        base44.auth.logout("/login");
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer();
+    return () => {
+      clearTimeout(inactivityTimer.current);
+      events.forEach((e) => window.removeEventListener(e, resetTimer));
+    };
   }, []);
 
   return (
