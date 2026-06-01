@@ -31,7 +31,7 @@ export default function CuadreCaja() {
   const [newConcept, setNewConcept] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(getTodayStr());
 
   const { data: cuadreHistories = [] } = useQuery({
     queryKey: ["cuadreHistory"],
