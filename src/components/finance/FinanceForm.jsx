@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +21,48 @@ function getTodayLocal() {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function CategoryCombobox({ value, onChange, options }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm",
+            !value && "text-muted-foreground"
+          )}
+        >
+          {selected ? selected.label : "Selecciona categoría"}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start" style={{ width: "var(--radix-popover-trigger-width)" }}>
+        <Command>
+          <CommandInput placeholder="Buscar categoría..." />
+          <CommandList>
+            <CommandEmpty>No se encontró.</CommandEmpty>
+            <CommandGroup>
+              {options.map((opt) => (
+                <CommandItem
+                  key={opt.value}
+                  value={opt.value}
+                  onSelect={(val) => { onChange(val); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === opt.value ? "opacity-100" : "opacity-0")} />
+                  {opt.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export default function FinanceForm({ open, onClose, onSubmit, type, editing }) {
@@ -74,12 +120,10 @@ export default function FinanceForm({ open, onClose, onSubmit, type, editing }) 
           </div>
           <div className="space-y-2">
             <Label>Categoría</Label>
-            <MobileSelect
+            <CategoryCombobox
               value={form.category}
-              onValueChange={(v) => setForm({ ...form, category: v })}
+              onChange={(v) => setForm({ ...form, category: v })}
               options={categories}
-              placeholder="Selecciona categoría"
-              label="Categoría"
             />
           </div>
           {type === "expense" && (
