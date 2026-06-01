@@ -47,6 +47,8 @@ export default function AppLayout() {
   }, []);
 
   useEffect(() => {
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if (isMobile) return;
     const resetTimer = () => {
       clearTimeout(inactivityTimer.current);
       inactivityTimer.current = setTimeout(() => {
