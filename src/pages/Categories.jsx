@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, TrendingUp, TrendingDown, Tag, ChevronLeft, ChevronRight } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -82,12 +82,13 @@ function CategoryForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-function CategoryCard({ category, incomes, expenses, onEdit, onDelete }) {
+function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth }) {
   const [expanded, setExpanded] = useState(false);
   const isIncome = category.type === "ingreso";
-  const items = isIncome
+  const allItems = isIncome
     ? incomes.filter((i) => i.category === category.name)
     : expenses.filter((e) => e.category === category.name);
+  const items = allItems.filter((i) => i.date && i.date.startsWith(selectedMonth));
   const total = items.reduce((s, i) => s + (i.amount || 0), 0);
 
   return (
@@ -146,11 +147,35 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete }) {
   );
 }
 
+function getMonthKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function formatMonthLabel(monthKey) {
+  const [y, m] = monthKey.split("-");
+  const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+  return format(d, "MMMM yyyy", { locale: es });
+}
+
 export default function Categories() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmState, setConfirmState] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(getMonthKey(new Date()));
   const qc = useQueryClient();
+
+  const prevMonth = () => {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    const d = new Date(y, m - 2, 1);
+    setSelectedMonth(getMonthKey(d));
+  };
+  const nextMonth = () => {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    const d = new Date(y, m, 1);
+    setSelectedMonth(getMonthKey(d));
+  };
 
   const handleDelete = (id) => {
     const cat = categories.find(c => c.id === id);
@@ -177,8 +202,8 @@ export default function Categories() {
   const incomeCategories = categories.filter((c) => c.type === "ingreso");
   const expenseCategories = categories.filter((c) => c.type === "gasto");
 
-  const totalIncomeByCategories = incomeCategories.reduce((s, c) => s + incomes.filter(i => i.category === c.name).reduce((a, b) => a + (b.amount || 0), 0), 0);
-  const totalExpenseByCategories = expenseCategories.reduce((s, c) => s + expenses.filter(e => e.category === c.name).reduce((a, b) => a + (b.amount || 0), 0), 0);
+  const totalIncomeByCategories = incomeCategories.reduce((s, c) => s + incomes.filter(i => i.category === c.name && i.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0), 0);
+  const totalExpenseByCategories = expenseCategories.reduce((s, c) => s + expenses.filter(e => e.category === c.name && e.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0), 0);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -187,9 +212,16 @@ export default function Categories() {
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Categorías</h1>
           <p className="text-muted-foreground mt-1">Organiza y visualiza tus ingresos y gastos por categoría</p>
         </div>
-        <Button onClick={() => { setEditing(null); setFormOpen(true); }} className="gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-1.5">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={prevMonth}><ChevronLeft className="w-4 h-4" /></Button>
+            <span className="text-sm font-semibold capitalize min-w-[130px] text-center">{formatMonthLabel(selectedMonth)}</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={nextMonth}><ChevronRight className="w-4 h-4" /></Button>
+          </div>
+          <Button onClick={() => { setEditing(null); setFormOpen(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> Nueva Categoría
         </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="incomes">
@@ -217,6 +249,7 @@ export default function Categories() {
               <CategoryCard key={cat.id} category={cat} incomes={incomes} expenses={expenses}
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
                 onDelete={handleDelete}
+                selectedMonth={selectedMonth}
               />
             ))
           )}
@@ -237,6 +270,7 @@ export default function Categories() {
               <CategoryCard key={cat.id} category={cat} incomes={incomes} expenses={expenses}
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
                 onDelete={handleDelete}
+                selectedMonth={selectedMonth}
               />
             ))
           )}
