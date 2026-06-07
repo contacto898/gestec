@@ -82,14 +82,21 @@ function CategoryForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth }) {
+function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth, fixedExpenses }) {
   const [expanded, setExpanded] = useState(false);
   const isIncome = category.type === "ingreso";
   const allItems = isIncome
     ? incomes.filter((i) => i.category === category.name)
     : expenses.filter((e) => e.category === category.name);
   const items = allItems.filter((i) => i.date && i.date.startsWith(selectedMonth));
-  const total = items.reduce((s, i) => s + (i.amount || 0), 0);
+
+  // Gastos fijos del mes cuya categoría coincide (solo para gastos)
+  const fixedItems = (!isIncome)
+    ? fixedExpenses.filter((f) => f.category === category.name && f.due_date && f.due_date.startsWith(selectedMonth))
+    : [];
+  const fixedTotal = fixedItems.reduce((s, f) => s + (f.amount || 0), 0);
+
+  const total = items.reduce((s, i) => s + (i.amount || 0), 0) + fixedTotal;
 
   return (
     <Card className="overflow-hidden">
@@ -108,7 +115,7 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
             </div>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <p className="text-xs text-muted-foreground">{items.length} registros</p>
+            <p className="text-xs text-muted-foreground">{items.length + fixedItems.length} registros</p>
             <p className="font-bold text-lg leading-tight" style={{ color: category.color }}>{formatCurrency(total)}</p>
             <div className="flex gap-1">
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(category)}><Pencil className="w-4 h-4" /></Button>
@@ -116,13 +123,13 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
             </div>
           </div>
         </div>
-        {items.length > 0 && (
+        {(items.length > 0 || fixedItems.length > 0) && (
           <Button variant="ghost" size="sm" className="mt-3 w-full text-xs text-muted-foreground" onClick={() => setExpanded(!expanded)}>
-            {expanded ? "Ocultar detalle" : `Ver ${items.length} registros`}
+            {expanded ? "Ocultar detalle" : `Ver ${items.length + fixedItems.length} registros`}
           </Button>
         )}
       </div>
-      {expanded && items.length > 0 && (
+      {expanded && (items.length > 0 || fixedItems.length > 0) && (
         <div className="border-t divide-y">
           {items.map((item) => (
             <div key={item.id} className="px-5 py-3 flex justify-between items-center hover:bg-muted/20">
@@ -135,6 +142,15 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
               <span className={`font-semibold text-sm ${isIncome ? "text-emerald-600" : "text-red-500"}`}>
                 {isIncome ? "+" : "-"}{formatCurrency(item.amount)}
               </span>
+            </div>
+          ))}
+          {fixedItems.map((item) => (
+            <div key={`fx-${item.id}`} className="px-5 py-3 flex justify-between items-center hover:bg-muted/20 bg-orange-50/50">
+              <div>
+                <p className="text-sm font-medium">{item.description} <span className="text-xs text-orange-500 ml-1">(Gasto Fijo)</span></p>
+                <p className="text-xs text-muted-foreground">{item.company}</p>
+              </div>
+              <span className="font-semibold text-sm text-red-500">-{formatCurrency(item.amount)}</span>
             </div>
           ))}
           <div className="px-5 py-3 flex justify-between items-center bg-muted/30">
@@ -189,6 +205,7 @@ export default function Categories() {
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: () => base44.entities.Category.list() });
   const { data: incomes = [] } = useQuery({ queryKey: ["incomes"], queryFn: () => base44.entities.Income.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
+  const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list() });
 
   const createMut = useMutation({ mutationFn: (d) => base44.entities.Category.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }) });
   const updateMut = useMutation({ mutationFn: ({ id, data }) => base44.entities.Category.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }) });
@@ -203,7 +220,11 @@ export default function Categories() {
   const expenseCategories = categories.filter((c) => c.type === "gasto");
 
   const totalIncomeByCategories = incomeCategories.reduce((s, c) => s + incomes.filter(i => i.category === c.name && i.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0), 0);
-  const totalExpenseByCategories = expenseCategories.reduce((s, c) => s + expenses.filter(e => e.category === c.name && e.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0), 0);
+  const totalExpenseByCategories = expenseCategories.reduce((s, c) => {
+    const expTotal = expenses.filter(e => e.category === c.name && e.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0);
+    const fxTotal = fixedExpenses.filter(f => f.category === c.name && f.due_date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0);
+    return s + expTotal + fxTotal;
+  }, 0);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -250,6 +271,7 @@ export default function Categories() {
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
                 onDelete={handleDelete}
                 selectedMonth={selectedMonth}
+                fixedExpenses={fixedExpenses}
               />
             ))
           )}
@@ -271,6 +293,7 @@ export default function Categories() {
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
                 onDelete={handleDelete}
                 selectedMonth={selectedMonth}
+                fixedExpenses={fixedExpenses}
               />
             ))
           )}
