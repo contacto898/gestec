@@ -82,7 +82,7 @@ function CategoryForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth, fixedExpenses }) {
+function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth, fixedExpenses, fixedExpensePayments }) {
   const [expanded, setExpanded] = useState(false);
   const isIncome = category.type === "ingreso";
   const allItems = isIncome
@@ -90,11 +90,21 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
     : expenses.filter((e) => e.category === category.name);
   const items = allItems.filter((i) => i.date && i.date.startsWith(selectedMonth));
 
-  // Gastos fijos del mes cuya categoría coincide (solo para gastos)
+  // Pagos de gastos fijos del mes cuya categoría del gasto fijo coincide con esta categoría
+  const fixedExpenseMap = Object.fromEntries(fixedExpenses.map((f) => [f.id, f]));
   const fixedItems = (!isIncome)
-    ? fixedExpenses.filter((f) => f.category === category.name && f.due_date && f.due_date.startsWith(selectedMonth))
+    ? fixedExpensePayments
+        .filter((p) => {
+          if (!p.payment_date?.startsWith(selectedMonth)) return false;
+          const fe = fixedExpenseMap[p.fixed_expense_id];
+          return fe && fe.category === category.name;
+        })
+        .map((p) => {
+          const fe = fixedExpenseMap[p.fixed_expense_id];
+          return { ...p, feName: fe?.description || p.fixed_expense_description, feCompany: fe?.company };
+        })
     : [];
-  const fixedTotal = fixedItems.reduce((s, f) => s + (f.amount || 0), 0);
+  const fixedTotal = fixedItems.reduce((s, p) => s + (p.paid_amount || 0), 0);
 
   const total = items.reduce((s, i) => s + (i.amount || 0), 0) + fixedTotal;
 
@@ -147,10 +157,12 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
           {fixedItems.map((item) => (
             <div key={`fx-${item.id}`} className="px-5 py-3 flex justify-between items-center hover:bg-muted/20 bg-orange-50/50">
               <div>
-                <p className="text-sm font-medium">{item.description} <span className="text-xs text-orange-500 ml-1">(Gasto Fijo)</span></p>
-                <p className="text-xs text-muted-foreground">{item.company}</p>
+                <p className="text-sm font-medium">{item.feName} <span className="text-xs text-orange-500 ml-1">(Gasto Fijo)</span></p>
+                <p className="text-xs text-muted-foreground">
+                  {item.feCompany} · {item.payment_date ? format(new Date(item.payment_date), "dd MMM yyyy", { locale: es }) : "—"}
+                </p>
               </div>
-              <span className="font-semibold text-sm text-red-500">-{formatCurrency(item.amount)}</span>
+              <span className="font-semibold text-sm text-red-500">-{formatCurrency(item.paid_amount)}</span>
             </div>
           ))}
           <div className="px-5 py-3 flex justify-between items-center bg-muted/30">
@@ -206,6 +218,7 @@ export default function Categories() {
   const { data: incomes = [] } = useQuery({ queryKey: ["incomes"], queryFn: () => base44.entities.Income.list() });
   const { data: expenses = [] } = useQuery({ queryKey: ["expenses"], queryFn: () => base44.entities.Expense.list() });
   const { data: fixedExpenses = [] } = useQuery({ queryKey: ["fixedExpenses"], queryFn: () => base44.entities.FixedExpense.list() });
+  const { data: fixedExpensePayments = [] } = useQuery({ queryKey: ["fixedExpensePayments"], queryFn: () => base44.entities.FixedExpensePayment.list() });
 
   const createMut = useMutation({ mutationFn: (d) => base44.entities.Category.create(d), onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }) });
   const updateMut = useMutation({ mutationFn: ({ id, data }) => base44.entities.Category.update(id, data), onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }) });
@@ -220,9 +233,12 @@ export default function Categories() {
   const expenseCategories = categories.filter((c) => c.type === "gasto");
 
   const totalIncomeByCategories = incomeCategories.reduce((s, c) => s + incomes.filter(i => i.category === c.name && i.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0), 0);
+  const fixedExpenseMap = Object.fromEntries(fixedExpenses.map((f) => [f.id, f]));
   const totalExpenseByCategories = expenseCategories.reduce((s, c) => {
     const expTotal = expenses.filter(e => e.category === c.name && e.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0);
-    const fxTotal = fixedExpenses.filter(f => f.category === c.name && f.due_date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0);
+    const fxTotal = fixedExpensePayments
+      .filter(p => p.payment_date?.startsWith(selectedMonth) && fixedExpenseMap[p.fixed_expense_id]?.category === c.name)
+      .reduce((a, b) => a + (b.paid_amount || 0), 0);
     return s + expTotal + fxTotal;
   }, 0);
 
@@ -272,6 +288,7 @@ export default function Categories() {
                 onDelete={handleDelete}
                 selectedMonth={selectedMonth}
                 fixedExpenses={fixedExpenses}
+                fixedExpensePayments={fixedExpensePayments}
               />
             ))
           )}
@@ -294,6 +311,7 @@ export default function Categories() {
                 onDelete={handleDelete}
                 selectedMonth={selectedMonth}
                 fixedExpenses={fixedExpenses}
+                fixedExpensePayments={fixedExpensePayments}
               />
             ))
           )}
