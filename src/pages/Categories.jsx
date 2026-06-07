@@ -82,31 +82,14 @@ function CategoryForm({ open, onClose, onSubmit, editing }) {
   );
 }
 
-function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth, fixedExpenses, fixedExpensePayments }) {
+function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedMonth }) {
   const [expanded, setExpanded] = useState(false);
   const isIncome = category.type === "ingreso";
   const allItems = isIncome
     ? incomes.filter((i) => i.category === category.name)
     : expenses.filter((e) => e.category === category.name);
   const items = allItems.filter((i) => i.date && i.date.startsWith(selectedMonth));
-
-  // Pagos de gastos fijos del mes cuya categoría del gasto fijo coincide con esta categoría
-  const fixedExpenseMap = Object.fromEntries(fixedExpenses.map((f) => [f.id, f]));
-  const fixedItems = (!isIncome)
-    ? fixedExpensePayments
-        .filter((p) => {
-          if (!p.payment_date?.startsWith(selectedMonth)) return false;
-          const fe = fixedExpenseMap[p.fixed_expense_id];
-          return fe && fe.category === category.name;
-        })
-        .map((p) => {
-          const fe = fixedExpenseMap[p.fixed_expense_id];
-          return { ...p, feName: fe?.description || p.fixed_expense_description, feCompany: fe?.company };
-        })
-    : [];
-  const fixedTotal = fixedItems.reduce((s, p) => s + (p.paid_amount || 0), 0);
-
-  const total = items.reduce((s, i) => s + (i.amount || 0), 0) + fixedTotal;
+  const total = items.reduce((s, i) => s + (i.amount || 0), 0);
 
   return (
     <Card className="overflow-hidden">
@@ -125,7 +108,7 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
             </div>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <p className="text-xs text-muted-foreground">{items.length + fixedItems.length} registros</p>
+            <p className="text-xs text-muted-foreground">{items.length} registros</p>
             <p className="font-bold text-lg leading-tight" style={{ color: category.color }}>{formatCurrency(total)}</p>
             <div className="flex gap-1">
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(category)}><Pencil className="w-4 h-4" /></Button>
@@ -133,13 +116,13 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
             </div>
           </div>
         </div>
-        {(items.length > 0 || fixedItems.length > 0) && (
+        {items.length > 0 && (
           <Button variant="ghost" size="sm" className="mt-3 w-full text-xs text-muted-foreground" onClick={() => setExpanded(!expanded)}>
-            {expanded ? "Ocultar detalle" : `Ver ${items.length + fixedItems.length} registros`}
+            {expanded ? "Ocultar detalle" : `Ver ${items.length} registros`}
           </Button>
         )}
       </div>
-      {expanded && (items.length > 0 || fixedItems.length > 0) && (
+      {expanded && items.length > 0 && (
         <div className="border-t divide-y">
           {items.map((item) => (
             <div key={item.id} className="px-5 py-3 flex justify-between items-center hover:bg-muted/20">
@@ -154,20 +137,62 @@ function CategoryCard({ category, incomes, expenses, onEdit, onDelete, selectedM
               </span>
             </div>
           ))}
-          {fixedItems.map((item) => (
-            <div key={`fx-${item.id}`} className="px-5 py-3 flex justify-between items-center hover:bg-muted/20 bg-orange-50/50">
+          <div className="px-5 py-3 flex justify-between items-center bg-muted/30">
+            <span className="text-sm font-semibold">Total</span>
+            <span className="font-bold" style={{ color: category.color }}>{formatCurrency(total)}</span>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function FixedExpensesCategoryCard({ payments, selectedMonth }) {
+  const [expanded, setExpanded] = useState(false);
+  const total = payments.reduce((s, p) => s + (p.paid_amount || 0), 0);
+  const color = "#f97316";
+
+  return (
+    <Card className="overflow-hidden border-orange-200">
+      <div className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-100">
+              <Tag className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold">GASTOS FIJOS</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Pagos registrados de gastos fijos</p>
+              <Badge className="mt-1 text-xs bg-orange-100 text-orange-600 border-none">Gasto Fijo</Badge>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <p className="text-xs text-muted-foreground">{payments.length} registros</p>
+            <p className="font-bold text-lg leading-tight text-orange-500">{formatCurrency(total)}</p>
+          </div>
+        </div>
+        {payments.length > 0 && (
+          <Button variant="ghost" size="sm" className="mt-3 w-full text-xs text-muted-foreground" onClick={() => setExpanded(!expanded)}>
+            {expanded ? "Ocultar detalle" : `Ver ${payments.length} registros`}
+          </Button>
+        )}
+      </div>
+      {expanded && payments.length > 0 && (
+        <div className="border-t divide-y">
+          {payments.map((p) => (
+            <div key={p.id} className="px-5 py-3 flex justify-between items-center hover:bg-muted/20">
               <div>
-                <p className="text-sm font-medium">{item.feName} <span className="text-xs text-orange-500 ml-1">(Gasto Fijo)</span></p>
+                <p className="text-sm font-medium">{p.feName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {item.feCompany} · {item.payment_date ? format(new Date(item.payment_date), "dd MMM yyyy", { locale: es }) : "—"}
+                  {p.feCompany} · {p.payment_date ? format(new Date(p.payment_date), "dd MMM yyyy", { locale: es }) : "—"}
                 </p>
               </div>
-              <span className="font-semibold text-sm text-red-500">-{formatCurrency(item.paid_amount)}</span>
+              <span className="font-semibold text-sm text-red-500">-{formatCurrency(p.paid_amount)}</span>
             </div>
           ))}
           <div className="px-5 py-3 flex justify-between items-center bg-muted/30">
             <span className="text-sm font-semibold">Total</span>
-            <span className="font-bold" style={{ color: category.color }}>{formatCurrency(total)}</span>
+            <span className="font-bold text-orange-500">{formatCurrency(total)}</span>
           </div>
         </div>
       )}
@@ -235,12 +260,14 @@ export default function Categories() {
   const totalIncomeByCategories = incomeCategories.reduce((s, c) => s + incomes.filter(i => i.category === c.name && i.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0), 0);
   const fixedExpenseMap = Object.fromEntries(fixedExpenses.map((f) => [f.id, f]));
   const totalExpenseByCategories = expenseCategories.reduce((s, c) => {
-    const expTotal = expenses.filter(e => e.category === c.name && e.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0);
-    const fxTotal = fixedExpensePayments
-      .filter(p => p.payment_date?.startsWith(selectedMonth) && fixedExpenseMap[p.fixed_expense_id]?.category === c.name)
-      .reduce((a, b) => a + (b.paid_amount || 0), 0);
-    return s + expTotal + fxTotal;
+    return s + expenses.filter(e => e.category === c.name && e.date?.startsWith(selectedMonth)).reduce((a, b) => a + (b.amount || 0), 0);
   }, 0);
+
+  // Todos los pagos de gastos fijos del mes (tarjeta especial)
+  const fixedPaymentsThisMonth = fixedExpensePayments
+    .filter(p => p.payment_date?.startsWith(selectedMonth))
+    .map(p => ({ ...p, feName: fixedExpenseMap[p.fixed_expense_id]?.description || p.fixed_expense_description, feCompany: fixedExpenseMap[p.fixed_expense_id]?.company }));
+  const totalFixedPayments = fixedPaymentsThisMonth.reduce((s, p) => s + (p.paid_amount || 0), 0);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -287,34 +314,25 @@ export default function Categories() {
                 onEdit={(c) => { setEditing(c); setFormOpen(true); }}
                 onDelete={handleDelete}
                 selectedMonth={selectedMonth}
-                fixedExpenses={fixedExpenses}
-                fixedExpensePayments={fixedExpensePayments}
               />
             ))
           )}
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          {expenseCategories.length > 0 && (
-            <div className="flex justify-end">
-              <div className="bg-red-50 px-4 py-2 rounded-xl text-sm font-semibold text-red-600">
-                Total categorías gastos: {formatCurrency(totalExpenseByCategories)}
-              </div>
+          <div className="flex justify-end">
+            <div className="bg-red-50 px-4 py-2 rounded-xl text-sm font-semibold text-red-600">
+              Total gastos: {formatCurrency(totalExpenseByCategories + totalFixedPayments)}
             </div>
-          )}
-          {expenseCategories.length === 0 ? (
-            <Card className="p-12 text-center text-muted-foreground">No hay categorías de gasto creadas</Card>
-          ) : (
-            expenseCategories.map((cat) => (
-              <CategoryCard key={cat.id} category={cat} incomes={incomes} expenses={expenses}
-                onEdit={(c) => { setEditing(c); setFormOpen(true); }}
-                onDelete={handleDelete}
-                selectedMonth={selectedMonth}
-                fixedExpenses={fixedExpenses}
-                fixedExpensePayments={fixedExpensePayments}
-              />
-            ))
-          )}
+          </div>
+          <FixedExpensesCategoryCard payments={fixedPaymentsThisMonth} selectedMonth={selectedMonth} />
+          {expenseCategories.map((cat) => (
+            <CategoryCard key={cat.id} category={cat} incomes={incomes} expenses={expenses}
+              onEdit={(c) => { setEditing(c); setFormOpen(true); }}
+              onDelete={handleDelete}
+              selectedMonth={selectedMonth}
+            />
+          ))}
         </TabsContent>
       </Tabs>
 
