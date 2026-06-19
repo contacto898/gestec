@@ -339,13 +339,15 @@ export default function Finances() {
     ...getAvailableMonths(expenses),
   ])].sort().reverse();
 
-  const filteredIncomes = selectedMonth === "all"
-    ? incomes
-    : incomes.filter((i) => i.date?.startsWith(selectedMonth));
+  const sortByDate = (items) => [...items].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
-  const filteredExpenses = selectedMonth === "all"
-    ? expenses
-    : expenses.filter((e) => e.date?.startsWith(selectedMonth));
+  const filteredIncomes = sortByDate(
+    selectedMonth === "all" ? incomes : incomes.filter((i) => i.date?.startsWith(selectedMonth))
+  );
+
+  const filteredExpenses = sortByDate(
+    selectedMonth === "all" ? expenses : expenses.filter((e) => e.date?.startsWith(selectedMonth))
+  );
 
   const monthOptions = [
     { value: "all", label: "Todos los meses" },
