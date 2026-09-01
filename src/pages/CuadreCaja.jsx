@@ -44,12 +44,34 @@ export default function CuadreCaja() {
   });
 
   const { data: incomes = [] } = useQuery({
-    queryKey: ["incomes"],
-    queryFn: () => base44.entities.Income.list("-created_date", 500),
+    queryKey: ["incomes", "all"],
+    queryFn: async () => {
+      let all = [];
+      let batch = await base44.entities.Income.list("-created_date", 500, 0);
+      all = all.concat(batch);
+      let offset = 500;
+      while (batch.length === 500) {
+        batch = await base44.entities.Income.list("-created_date", 500, offset);
+        all = all.concat(batch);
+        offset += 500;
+      }
+      return all;
+    },
   });
   const { data: expenses = [] } = useQuery({
-    queryKey: ["expenses"],
-    queryFn: () => base44.entities.Expense.list("-created_date", 500),
+    queryKey: ["expenses", "all"],
+    queryFn: async () => {
+      let all = [];
+      let batch = await base44.entities.Expense.list("-created_date", 500, 0);
+      all = all.concat(batch);
+      let offset = 500;
+      while (batch.length === 500) {
+        batch = await base44.entities.Expense.list("-created_date", 500, offset);
+        all = all.concat(batch);
+        offset += 500;
+      }
+      return all;
+    },
   });
 
   const balanceTotal =
